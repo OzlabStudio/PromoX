@@ -40,8 +40,8 @@
     <!-- 1. VISTA: LOGIN POR PIN -->
     <section id="view-login" class="space-y-6">
       <div class="bg-slate-900/60 p-6 rounded-xl border border-slate-800 text-center">
-        <h2 class="text-lg font-semibold mb-2 text-violet-400">Ingreso de Estudiantes</h2>
-        <p class="text-xs text-slate-400 mb-6">Introduce tu PIN de 4 dígitos para acceder a tu panel personal.</p>
+        <h2 class="text-lg font-semibold mb-2 text-violet-400">Acceso al Sistema</h2>
+        <p class="text-xs text-slate-400 mb-6">Ingresa tu PIN de 4 dígitos. (Usa 0000 para tu primer acceso)</p>
         
         <form id="form-login" onsubmit="event.preventDefault(); loginEstudiante();" class="space-y-4 max-w-xs mx-auto">
           <div>
@@ -58,10 +58,36 @@
       </div>
     </section>
 
-    <!-- 2. VISTA: PANEL DEL ESTUDIANTE -->
+    <!-- 2. VISTA: CONFIGURACIÓN PRIMER PIN (0000) -->
+    <section id="view-setup-pin" class="hidden space-y-6">
+      <div class="bg-slate-900/60 p-6 rounded-xl border border-slate-800 text-center">
+        <h2 class="text-lg font-semibold mb-2 text-cyan-400">Primer Acceso</h2>
+        <p class="text-xs text-slate-400 mb-6">Selecciona tu nombre y crea tu PIN personal de 4 dígitos.</p>
+        
+        <form id="form-setup-pin" onsubmit="event.preventDefault(); guardarNuevoPin();" class="space-y-4 max-w-xs mx-auto text-left">
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Selecciona tu Nombre</label>
+            <select id="select-estudiante-setup" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-200 focus:outline-none focus:border-cyan-500">
+              <option value="">Cargando estudiantes...</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Crea tu nuevo PIN (4 dígitos)</label>
+            <input type="password" id="input-new-pin" maxlength="4" placeholder="••••" required pattern="[0-9]{4}" inputmode="numeric"
+                   class="w-full text-center text-2xl font-mono tracking-widest bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-cyan-400 focus:outline-none focus:border-violet-500 transition-colors">
+          </div>
+          <button type="submit" id="btn-save-pin"
+                  class="w-full bg-gradient-to-r from-cyan-600 to-violet-600 hover:from-cyan-500 hover:to-violet-500 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-all transform active:scale-95 flex items-center justify-center gap-2">
+            <span>Guardar PIN e Ingresar</span>
+            <i class="fa-solid fa-check"></i>
+          </button>
+        </form>
+        <p id="setup-msg" class="text-xs text-center font-medium mt-2 hidden"></p>
+      </div>
+    </section>
+
+    <!-- 3. VISTA: PANEL DEL ESTUDIANTE -->
     <section id="view-dashboard" class="hidden space-y-6">
-      
-      <!-- BIENVENIDA Y CERRAR SESIÓN -->
       <div class="flex items-center justify-between bg-slate-900/80 p-4 rounded-xl border border-slate-800">
         <div>
           <span class="text-xs text-slate-400 uppercase tracking-wider">Estudiante</span>
@@ -73,7 +99,6 @@
         </button>
       </div>
 
-      <!-- HISTORIAL Y PROGRESO -->
       <div class="bg-slate-900/60 p-5 rounded-xl border border-slate-800 space-y-4">
         <h3 class="text-sm font-bold text-violet-400 uppercase tracking-wider flex items-center gap-2">
           <i class="fa-solid fa-chart-line"></i> Tu Progreso y Actividades
@@ -84,20 +109,15 @@
           <p>Cargando información...</p>
         </div>
 
-        <div id="history-list" class="space-y-3 hidden">
-          <!-- Se llena dinámicamente -->
-        </div>
+        <div id="history-list" class="space-y-3 hidden"></div>
       </div>
 
-      <!-- FORMULARIO DE NUEVA ENTREGA -->
       <div class="bg-slate-900/60 p-5 rounded-xl border border-slate-800 space-y-4">
         <h3 class="text-sm font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-2">
           <i class="fa-solid fa-paper-plane"></i> Entregar Nueva Actividad
         </h3>
 
         <form id="form-entrega" onsubmit="event.preventDefault(); enviarEntrega();" class="space-y-4">
-          
-          <!-- Seleccionar Actividad -->
           <div>
             <label class="block text-xs font-medium text-slate-300 mb-1">Selecciona la Actividad</label>
             <select id="select-actividad" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-200 focus:outline-none focus:border-cyan-500">
@@ -105,7 +125,6 @@
             </select>
           </div>
 
-          <!-- Modalidad (Individual / Pareja) -->
           <div>
             <label class="block text-xs font-medium text-slate-300 mb-1">Modalidad de Trabajo</label>
             <select id="select-modalidad" onchange="toggleParejaSelect()" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-200 focus:outline-none focus:border-cyan-500">
@@ -114,7 +133,6 @@
             </select>
           </div>
 
-          <!-- Selector de Pareja (Oculto por defecto) -->
           <div id="container-pareja" class="hidden">
             <label class="block text-xs font-medium text-slate-300 mb-1">Selecciona a tu Compañero/a</label>
             <select id="select-pareja" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-200 focus:outline-none focus:border-cyan-500">
@@ -122,14 +140,12 @@
             </select>
           </div>
 
-          <!-- Enlace de la entrega -->
           <div>
             <label class="block text-xs font-medium text-slate-300 mb-1">Enlace del Proyecto (Canva / CapCut / Drive)</label>
             <input type="url" id="input-enlace" placeholder="https://canva.com/design/..." required
                    class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-200 focus:outline-none focus:border-cyan-500">
           </div>
 
-          <!-- Botón Enviar -->
           <button type="submit" id="btn-enviar"
                   class="w-full bg-gradient-to-r from-cyan-600 to-violet-600 hover:from-cyan-500 hover:to-violet-500 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-all transform active:scale-95 flex items-center justify-center gap-2">
             <i class="fa-solid fa-cloud-arrow-up"></i>
@@ -138,21 +154,43 @@
         </form>
         <p id="entrega-msg" class="text-xs text-center font-medium mt-2 hidden"></p>
       </div>
+    </section>
 
+    <!-- 4. VISTA: PANEL DEL DOCENTE (PIN 6527) -->
+    <section id="view-teacher" class="hidden space-y-6">
+      <div class="flex items-center justify-between bg-slate-900/80 p-4 rounded-xl border border-slate-800">
+        <div>
+          <span class="text-xs text-amber-400 uppercase tracking-wider font-bold">Panel Docente</span>
+          <h2 class="text-xl font-bold text-white">Gestión de Calificaciones</h2>
+        </div>
+        <button onclick="logout()" class="text-slate-400 hover:text-rose-400 text-xs font-semibold px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition-colors flex items-center gap-2">
+          <i class="fa-solid fa-right-from-bracket"></i>
+          <span>Salir</span>
+        </button>
+      </div>
+
+      <div class="bg-slate-900/60 p-5 rounded-xl border border-slate-800 space-y-4">
+        <h3 class="text-sm font-bold text-amber-400 uppercase tracking-wider flex items-center gap-2">
+          <i class="fa-solid fa-list-check"></i> Entregas Recibidas
+        </h3>
+        <div id="teacher-loading" class="text-center py-6 text-slate-400 text-sm">
+          <i class="fa-solid fa-circle-notch fa-spin text-2xl text-amber-500 mb-2"></i>
+          <p>Cargando entregas...</p>
+        </div>
+        <div id="teacher-entregas-list" class="space-y-3 hidden"></div>
+      </div>
     </section>
 
   </div>
 
-  <!-- SCRIPT DE LÓGICA DE CONEXIÓN CON APPS SCRIPT -->
   <script>
-    // =========================================================
-    // PEGA AQUÍ LA URL DE TU APLICACIÓN WEB PUBLICADA EN APPS SCRIPT
-    // =========================================================
     const API_URL = "https://script.google.com/macros/s/AKfycbyNu0gODFNCI4I_vb0XFFG7-u0hXmAoCXm3Ch-ILedWX9SIchVoDfXVy5inE8fbfJel/exec";
+    const PIN_DOCENTE = "6527";
+    const PIN_GENERICO = "0000";
+
     let currentStudent = null;
     let allStudents = [];
 
-    // Validar PIN de ingreso
     async function loginEstudiante() {
       const pin = document.getElementById('input-pin').value.trim();
       const errorMsg = document.getElementById('login-error');
@@ -164,6 +202,25 @@
       btnLogin.disabled = true;
       btnLogin.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Validando...`;
 
+      // Acceso Docente
+      if (pin === PIN_DOCENTE) {
+        document.getElementById('view-login').classList.add('hidden');
+        document.getElementById('view-teacher').classList.remove('hidden');
+        cargarEntregasDocente();
+        btnLogin.disabled = false;
+        btnLogin.innerHTML = `<span>Ingresar</span><i class="fa-solid fa-arrow-right"></i>`;
+        return;
+      }
+
+      // Acceso Primer Ingreso (0000)
+      if (pin === PIN_GENERICO) {
+        cargarEstudiantesSinPin();
+        btnLogin.disabled = false;
+        btnLogin.innerHTML = `<span>Ingresar</span><i class="fa-solid fa-arrow-right"></i>`;
+        return;
+      }
+
+      // Acceso Estudiante Normal
       try {
         const response = await fetch(`${API_URL}?action=loginAlumno&pin=${pin}`);
         const data = await response.json();
@@ -192,7 +249,73 @@
       }
     }
 
-    // Renderizar Historial de Tareas
+    // Cargar alumnos con PIN 0000 para registro
+    async function cargarEstudiantesSinPin() {
+      const selectSetup = document.getElementById('select-estudiante-setup');
+      try {
+        const response = await fetch(`${API_URL}?action=getAlumnosSinPin`);
+        const data = await response.json();
+
+        selectSetup.innerHTML = '<option value="">Selecciona tu nombre...</option>';
+        if (data.alumnos && data.alumnos.length > 0) {
+          data.alumnos.forEach(st => {
+            selectSetup.innerHTML += `<option value="${st.id}">${st.nombre}</option>`;
+          });
+          document.getElementById('view-login').classList.add('hidden');
+          document.getElementById('view-setup-pin').classList.remove('hidden');
+        } else {
+          alert("Todos los estudiantes ya han configurado su PIN personal.");
+        }
+      } catch (err) {
+        alert("Error al cargar la lista de estudiantes.");
+      }
+    }
+
+    // Guardar nuevo PIN
+    async function guardarNuevoPin() {
+      const studentId = document.getElementById('select-estudiante-setup').value;
+      const newPin = document.getElementById('input-new-pin').value.trim();
+      const msg = document.getElementById('setup-msg');
+      const btnSave = document.getElementById('btn-save-pin');
+
+      if (!studentId || newPin.length !== 4) return;
+      if (newPin === PIN_GENERICO || newPin === PIN_DOCENTE) {
+        msg.textContent = "Ese PIN no está permitido. Elige otro.";
+        msg.className = "text-xs text-center font-medium mt-2 text-rose-400";
+        msg.classList.remove('hidden');
+        return;
+      }
+
+      btnSave.disabled = true;
+      btnSave.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Guardando...`;
+
+      try {
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'setupPin', studentId: studentId, newPin: newPin })
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          msg.textContent = "¡PIN guardado! Ya puedes ingresar con tu nuevo PIN.";
+          msg.className = "text-xs text-center font-medium mt-2 text-emerald-400";
+          msg.classList.remove('hidden');
+          setTimeout(() => {
+            logout();
+          }, 1500);
+        } else {
+          throw new Error(data.message);
+        }
+      } catch (err) {
+        msg.textContent = "Error al guardar el PIN. Intenta nuevamente.";
+        msg.className = "text-xs text-center font-medium mt-2 text-rose-400";
+        msg.classList.remove('hidden');
+      } finally {
+        btnSave.disabled = false;
+        btnSave.innerHTML = `<span>Guardar PIN e Ingresar</span><i class="fa-solid fa-check"></i>`;
+      }
+    }
+
     function renderHistorial(historial) {
       const historyList = document.getElementById('history-list');
       const loading = document.getElementById('loading-history');
@@ -209,6 +332,103 @@
       historial.forEach(item => {
         const isCalificado = item.nota && item.nota !== "-";
         const badgeColor = isCalificado ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border-amber-500/30';
+
+        historyList.innerHTML += `
+          <div class="p-3 bg-slate-950 rounded-lg border border-slate-800 space-y-1">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-slate-200">${item.actividad}</span>
+              <span class="text-[10px] px-2 py-0.5 rounded-full border ${badgeColor}">${item.estado}</span>
+            </div>
+            <div class="flex items-center justify-between text-xs text-slate-400">
+              <span>Nota: <strong class="text-cyan-400">${item.nota}</strong></span>
+              <span class="text-[11px] text-slate-500">${item.observaciones ? item.observaciones : 'Sin observaciones'}</span>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    async function fetchActividades() {
+      const selectAct = document.getElementById('select-actividad');
+      try {
+        const res = await fetch(`${API_URL}?action=getActividades`);
+        const actividades = await res.json();
+
+        selectAct.innerHTML = '<option value="">Selecciona una opción...</option>';
+        actividades.forEach(act => {
+          selectAct.innerHTML += `<option value="${act.id}">${act.titulo} (${act.herramientas})</option>`;
+        });
+      } catch (err) {
+        selectAct.innerHTML = '<option value="">Error al cargar actividades</option>';
+      }
+    }
+
+    function populateParejasDropdown() {
+      const selectPareja = document.getElementById('select-pareja');
+      selectPareja.innerHTML = '<option value="">Selecciona un compañero/a...</option>';
+
+      allStudents.forEach(st => {
+        if (st.id !== currentStudent.id) {
+          selectPareja.innerHTML += `<option value="${st.id}">${st.nombre}</option>`;
+        }
+      });
+    }
+
+    function toggleParejaSelect() {
+      const mode = document.getElementById('select-modalidad').value;
+      const container = document.getElementById('container-pareja');
+      container.classList.toggle('hidden', mode !== 'pareja');
+    }
+
+    async function enviarEntrega() {
+      const btnEnviar = document.getElementById('btn-enviar');
+      const msg = document.getElementById('entrega-msg');
+      const actividadId = document.getElementById('select-actividad').value;
+      const modalidad = document.getElementById('select-modalidad').value;
+      const alumno2 = modalidad === 'pareja' ? document.getElementById('select-pareja').value : "";
+      const enlace = document.getElementById('input-enlace').value.trim();
+
+      if (!actividadId || !enlace) return;
+
+      btnEnviar.disabled = true;
+      btnEnviar.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Guardando...`;
+      msg.classList.add('hidden');
+
+      const payload = {
+        action: 'guardarEntrega',
+        actividadId: actividadId,
+        alumno1: currentStudent.id,
+        alumno2: alumno2,
+        enlace: enlace
+      };
+
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+        const result = await res.json();
+
+        if (result.success) {
+          msg.textContent = "¡Entrega guardada exitosamente!";
+          msg.className = "text-xs text-center font-medium mt-2 text-emerald-400";
+          document.getElementById('form-entrega').reset();
+          toggleParejaSelect();
+          loginEstudiante();
+        } else {
+          throw new Error(result.message);
+        }
+      } catch (err) {
+        msg.textContent = "Error al enviar la entrega. Intenta de nuevo.";
+        msg.className = "text-xs text-center font-medium mt-2 text-rose-400";
+      } finally {
+        msg.classList.remove('hidden');
+        btnEnviar.disabled = false;
+        btnEnviar.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i><span>Enviar Entregable</span>`;
+      }
+    }
+
+    // Lógica para cargar entregas en la vista Docen-emerald-400 border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border-amber-500/30';
 
         historyList.innerHTML += `
           <div class="p-3 bg-slate-950 rounded-lg border border-slate-800 space-y-1">
