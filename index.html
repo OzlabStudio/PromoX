@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Optativa de Tecnología - Portal de Estudiantes</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brandDark: '#0f172a',
+            brandCard: '#1e293b',
+            brandAccent: '#8b5cf6',
+            brandCyan: '#06b6d4'
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-brandDark text-slate-100 min-h-screen font-sans antialiased flex flex-col items-center justify-center p-4">
+
+  <!-- CONTENEDOR PRINCIPAL -->
+  <div class="w-full max-w-2xl bg-brandCard rounded-2xl shadow-2xl border border-slate-800 p-6 md:p-8">
+
+    <!-- HEADER / ENCABEZADO -->
+    <header class="text-center mb-8">
+      <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-tr from-violet-600 to-cyan-500 mb-4 shadow-lg">
+        <i class="fa-solid fa-laptop-code text-2xl text-white"></i>
+      </div>
+      <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight text-white">Optativa de Tecnología</h1>
+      <p class="text-sm text-slate-400 mt-1">Control de Entregas y Progreso Académico</p>
+    </header>
+
+    <!-- 1. VISTA: LOGIN POR PIN -->
+    <section id="view-login" class="space-y-6">
+      <div class="bg-slate-900/60 p-6 rounded-xl border border-slate-800 text-center">
+        <h2 class="text-lg font-semibold mb-2 text-violet-400">Ingreso de Estudiantes</h2>
+        <p class="text-xs text-slate-400 mb-6">Introduce tu PIN de 4 dígitos para acceder a tu panel personal.</p>
+        
+        <form id="form-login" onsubmit="event.preventDefault(); loginEstudiante();" class="space-y-4 max-w-xs mx-auto">
+          <div>
+            <input type="password" id="input-pin" maxlength="4" placeholder="••••" required pattern="[0-9]{4}" inputmode="numeric"
+                   class="w-full text-center text-3xl font-mono tracking-widest bg-slate-950 border border-slate-700 rounded-lg px-4 py-3 text-cyan-400 focus:outline-none focus:border-violet-500 transition-colors">
+          </div>
+          <button type="submit" id="btn-login"
+                  class="w-full bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-500 hover:to-cyan-500 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-all transform active:scale-95 flex items-center justify-center gap-2">
+            <span>Ingresar</span>
+            <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </form>
+        <p id="login-error" class="text-rose-400 text-xs mt-3 hidden"></p>
+      </div>
+    </section>
+
+    <!-- 2. VISTA: PANEL DEL ESTUDIANTE -->
+    <section id="view-dashboard" class="hidden space-y-6">
+      
+      <!-- BIENVENIDA Y CERRAR SESIÓN -->
+      <div class="flex items-center justify-between bg-slate-900/80 p-4 rounded-xl border border-slate-800">
+        <div>
+          <span class="text-xs text-slate-400 uppercase tracking-wider">Estudiante</span>
+          <h2 id="student-name" class="text-xl font-bold text-cyan-400">Cargando...</h2>
+        </div>
+        <button onclick="logout()" class="text-slate-400 hover:text-rose-400 text-xs font-semibold px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition-colors flex items-center gap-2">
+          <i class="fa-solid fa-right-from-bracket"></i>
+          <span>Salir</span>
+        </button>
+      </div>
+
+      <!-- HISTORIAL Y PROGRESO -->
+      <div class="bg-slate-900/60 p-5 rounded-xl border border-slate-800 space-y-4">
+        <h3 class="text-sm font-bold text-violet-400 uppercase tracking-wider flex items-center gap-2">
+          <i class="fa-solid fa-chart-line"></i> Tu Progreso y Actividades
+        </h3>
+        
+        <div id="loading-history" class="text-center py-6 text-slate-400 text-sm">
+          <i class="fa-solid fa-circle-notch fa-spin text-2xl text-violet-500 mb-2"></i>
+          <p>Cargando información...</p>
+        </div>
+
+        <div id="history-list" class="space-y-3 hidden">
+          <!-- Se llena dinámicamente -->
+        </div>
+      </div>
+
+      <!-- FORMULARIO DE NUEVA ENTREGA -->
+      <div class="bg-slate-900/60 p-5 rounded-xl border border-slate-800 space-y-4">
+        <h3 class="text-sm font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-2">
+          <i class="fa-solid fa-paper-plane"></i> Entregar Nueva Actividad
+        </h3>
+
+        <form id="form-entrega" onsubmit="event.preventDefault(); enviarEntrega();" class="space-y-4">
+          
+          <!-- Seleccionar Actividad -->
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Selecciona la Actividad</label>
+            <select id="select-actividad" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-200 focus:outline-none focus:border-cyan-500">
+              <option value="">Cargando actividades...</option>
+            </select>
+          </div>
+
+          <!-- Modalidad (Individual / Pareja) -->
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Modalidad de Trabajo</label>
+            <select id="select-modalidad" onchange="toggleParejaSelect()" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-200 focus:outline-none focus:border-cyan-500">
+              <option value="individual">Individual</option>
+              <option value="pareja">En Pareja</option>
+            </select>
+          </div>
+
+          <!-- Selector de Pareja (Oculto por defecto) -->
+          <div id="container-pareja" class="hidden">
+            <label class="block text-xs font-medium text-slate-300 mb-1">Selecciona a tu Compañero/a</label>
+            <select id="select-pareja" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-200 focus:outline-none focus:border-cyan-500">
+              <option value="">Selecciona un integrante...</option>
+            </select>
+          </div>
+
+          <!-- Enlace de la entrega -->
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Enlace del Proyecto (Canva / CapCut / Drive)</label>
+            <input type="url" id="input-enlace" placeholder="https://canva.com/design/..." required
+                   class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-200 focus:outline-none focus:border-cyan-500">
+          </div>
+
+          <!-- Botón Enviar -->
+          <button type="submit" id="btn-enviar"
+                  class="w-full bg-gradient-to-r from-cyan-600 to-violet-600 hover:from-cyan-500 hover:to-violet-500 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-all transform active:scale-95 flex items-center justify-center gap-2">
+            <i class="fa-solid fa-cloud-arrow-up"></i>
+            <span>Enviar Entregable</span>
+          </button>
+        </form>
+        <p id="entrega-msg" class="text-xs text-center font-medium mt-2 hidden"></p>
+      </div>
+
+    </section>
+
+  </div>
+
+  <!-- SCRIPT DE LÓGICA DE CONEXIÓN CON APPS SCRIPT -->
+  <script>
+    // =========================================================
+    // PEGA AQUÍ LA URL DE TU APLICACIÓN WEB PUBLICADA EN APPS SCRIPT
+    // =========================================================
+    const API_URL = "https://script.google.com/macros/s/AKfycbwSH49m68VtEqcoQkwAduV71gm1uLx1P6i8tG53bZSaMbC0EPbKOfsrRlWKNJgedkLe/exec”;
+
+    let currentStudent = null;
+    let allStudents = [];
+
+    // Validar PIN de ingreso
+    async function loginEstudiante() {
+      const pin = document.getElementById('input-pin').value.trim();
+      const errorMsg = document.getElementById('login-error');
+      const btnLogin = document.getElementById('btn-login');
+
+      if (pin.length !== 4) return;
+
+      errorMsg.classList.add('hidden');
+      btnLogin.disabled = true;
+      btnLogin.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Validando...`;
+
+      try {
+        const response = await fetch(`${API_URL}?action=loginAlumno&pin=${pin}`);
+        const data = await response.json();
+
+        if (data.success) {
+          currentStudent = data.alumno;
+          allStudents = data.listaAlumnos || [];
+
+          document.getElementById('view-login').classList.add('hidden');
+          document.getElementById('view-dashboard').classList.remove('hidden');
+          document.getElementById('student-name').textContent = currentStudent.nombre;
+
+          renderHistorial(data.historial);
+          populateParejasDropdown();
+          fetchActividades();
+        } else {
+          errorMsg.textContent = data.message || "PIN incorrecto. Verifica e intenta de nuevo.";
+          errorMsg.classList.remove('hidden');
+        }
+      } catch (err) {
+        errorMsg.textContent = "Error de conexión. Inténtalo más tarde.";
+        errorMsg.classList.remove('hidden');
+      } finally {
+        btnLogin.disabled = false;
+        btnLogin.innerHTML = `<span>Ingresar</span><i class="fa-solid fa-arrow-right"></i>`;
+      }
+    }
+
+    // Renderizar Historial de Tareas
+    function renderHistorial(historial) {
+      const historyList = document.getElementById('history-list');
+      const loading = document.getElementById('loading-history');
+
+      loading.classList.add('hidden');
+      historyList.classList.remove('hidden');
+      historyList.innerHTML = '';
+
+      if (!historial || historial.length === 0) {
+        historyList.innerHTML = `<p class="text-xs text-slate-500 text-center py-4">Aún no has enviado entregas.</p>`;
+        return;
+      }
+
+      historial.forEach(item => {
+        const isCalificado = item.nota && item.nota !== "-";
+        const badgeColor = isCalificado ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border-amber-500/30';
+
+        historyList.innerHTML += `
+          <div class="p-3 bg-slate-950 rounded-lg border border-slate-800 space-y-1">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-slate-200">${item.actividad}</span>
+              <span class="text-[10px] px-2 py-0.5 rounded-full border ${badgeColor}">${item.estado}</span>
+            </div>
+            <div class="flex items-center justify-between text-xs text-slate-400">
+              <span>Nota: <strong class="text-cyan-400">${item.nota}</strong></span>
+              <span class="text-[11px] text-slate-500">${item.observaciones ? item.observaciones : 'Sin observaciones'}</span>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    // Cargar Lista de Actividades desde el Sheet
+    async function fetchActividades() {
+      const selectAct = document.getElementById('select-actividad');
+      try {
+        const res = await fetch(`${API_URL}?action=getActividades`);
+        const actividades = await res.json();
+
+        selectAct.innerHTML = '<option value="">Selecciona una opción...</option>';
+        actividades.forEach(act => {
+          selectAct.innerHTML += `<option value="${act.id}">${act.titulo} (${act.herramienta})</option>`;
+        });
+      } catch (err) {
+        selectAct.innerHTML = '<option value="">Error al cargar actividades</option>';
+      }
+    }
+
+    // Poblar Selector de Compañeros
+    function populateParejasDropdown() {
+      const selectPareja = document.getElementById('select-pareja');
+      selectPareja.innerHTML = '<option value="">Selecciona un compañero/a...</option>';
+
+      allStudents.forEach(st => {
+        if (st.id !== currentStudent.id) {
+          selectPareja.innerHTML += `<option value="${st.id}">${st.nombre}</option>`;
+        }
+      });
+    }
+
+    // Mostrar/Ocultar Selector de Pareja
+    function toggleParejaSelect() {
+      const mode = document.getElementById('select-modalidad').value;
+      const container = document.getElementById('container-pareja');
+      if (mode === 'pareja') {
+        container.classList.remove('hidden');
+      } else {
+        container.classList.add('hidden');
+      }
+    }
+
+    // Enviar Entrega a Apps Script
+    async function enviarEntrega() {
+      const btnEnviar = document.getElementById('btn-enviar');
+      const msg = document.getElementById('entrega-msg');
+      const actividadId = document.getElementById('select-actividad').value;
+      const modalidad = document.getElementById('select-modalidad').value;
+      const alumno2 = modalidad === 'pareja' ? document.getElementById('select-pareja').value : "";
+      const enlace = document.getElementById('input-enlace').value.trim();
+
+      if (!actividadId || !enlace) return;
+
+      btnEnviar.disabled = true;
+      btnEnviar.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Guardando...`;
+      msg.classList.add('hidden');
+
+      const payload = {
+        actividadId: actividadId,
+        alumno1: currentStudent.id,
+        alumno2: alumno2,
+        enlace: enlace
+      };
+
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+        const result = await res.json();
+
+        if (result.success) {
+          msg.textContent = "¡Entrega guardada exitosamente!";
+          msg.className = "text-xs text-center font-medium mt-2 text-emerald-400";
+          document.getElementById('form-entrega').reset();
+          toggleParejaSelect();
+          // Recargar historial
+          loginEstudiante();
+        } else {
+          throw new Error(result.message);
+        }
+      } catch (err) {
+        msg.textContent = "Error al enviar la entrega. Intenta de nuevo.";
+        msg.className = "text-xs text-center font-medium mt-2 text-rose-400";
+      } finally {
+        msg.classList.remove('hidden');
+        btnEnviar.disabled = false;
+        btnEnviar.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i><span>Enviar Entregable</span>`;
+      }
+    }
+
+    // Cerrar Sesión
+    function logout() {
+      currentStudent = null;
+      document.getElementById('input-pin').value = '';
+      document.getElementById('view-dashboard').classList.add('hidden');
+      document.getElementById('view-login').classList.remove('hidden');
+    }
+  </script>
+</body>
+</html>
