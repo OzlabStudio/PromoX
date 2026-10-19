@@ -328,7 +328,7 @@
       };
     }
 
-    // Función global para formatear fechas a dd/mm/aaaa y hh:mm am/pm separados
+    // Función para formatear fecha y hora separados
     function formatearFechaHora(fechaStr) {
       if (!fechaStr) return { fecha: '-', hora: '-' };
       const date = new Date(fechaStr);
@@ -365,7 +365,7 @@
       if (pin === PIN_DOCENTE) {
         document.getElementById('view-login').classList.add('hidden');
         document.getElementById('view-teacher').classList.remove('hidden');
-        cargarPanelDocente();
+        await cargarPanelDocente();
         btnLogin.disabled = false;
         btnLogin.innerHTML = `<span>Ingresar</span><i class="fa-solid fa-arrow-right"></i>`;
         return;
@@ -388,7 +388,7 @@
           
           let totalNota = 0;
           data.historial.forEach(h => {
-            if(h.nota && !isNaN(h.nota)) totalNota += parseFloat(h.nota);
+            if(h.nota !== undefined && h.nota !== "" && !isNaN(h.nota)) totalNota += parseFloat(h.nota);
           });
           document.getElementById('student-score').innerText = `${totalNota.toFixed(1)} / 20 pts`;
           
@@ -429,11 +429,8 @@
         }
 
         actividades.forEach(act => {
-          const pts = act.puntajeMaximo || act.puntajeMax || act["Puntaje Maximo"] || 0;
-          const tituloAct = act.titulo || act.Título || act["Título de Actividad"] || "Actividad";
-          const herramientaAct = act.herramientas || act.Herramientas || act.Herramienta || 'General';
-
-          select.innerHTML += `<option value="${act.id}">${tituloAct} (${herramientaAct}) - Max: ${pts} pts</option>`;
+          const pts = act.puntajeMaximo || act.puntajeMax || 20;
+          select.innerHTML += `<option value="${act.id}">${act.titulo} (${act.herramientas || 'General'}) - Max: ${pts} pts</option>`;
         });
       } catch (err) {
         select.innerHTML = '<option value="">Error al cargar actividades</option>';
@@ -499,7 +496,7 @@
           const reloadData = await reloadRes.json();
 
           let totalNota = 0;
-          reloadData.historial.forEach(h => { if(h.nota && !isNaN(h.nota)) totalNota += parseFloat(h.nota); });
+          reloadData.historial.forEach(h => { if(h.nota !== undefined && h.nota !== "" && !isNaN(h.nota)) totalNota += parseFloat(h.nota); });
           document.getElementById('student-score').innerText = `${totalNota.toFixed(1)} / 20 pts`;
           renderFichasEstudiante(reloadData.historial);
         } else {
@@ -525,15 +522,15 @@
 
       historial.forEach(act => {
         const isCalificado = act.estado === "Calificado";
-        const fh = formatearFechaHora(act.fechaEntrega || act.fechaLimite);
-        const notaMostrar = (act.nota !== undefined && act.nota !== "" && !isNaN(act.nota)) ? act.nota : '-';
+        const fh = formatearFechaHora(act.fechaEntrega);
+        const notaMostrar = (act.nota !== undefined && act.nota !== "" && act.nota !== null && !isNaN(act.nota)) ? act.nota : '-';
 
         container.innerHTML += `
           <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 space-y-3 shadow-lg"> 
             <div class="flex justify-between items-start"> 
               <div> 
                 <span class="text-[10px] text-violet-400 font-bold uppercase">${act.idAct || ''} ${act.herramientas ? '• ' + act.herramientas : ''}</span> 
-                <h4 class="text-sm font-bold text-white">${act.titulo || act.actividad || 'Actividad'}</h4> 
+                <h4 class="text-sm font-bold text-white">${act.titulo || 'Actividad'}</h4> 
               </div> 
               <span class="text-[10px] px-2 py-0.5 rounded-full border ${isCalificado ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border-amber-500/30'}">${act.estado}</span> 
             </div> 
@@ -544,7 +541,7 @@
               </div>
               <div class="flex justify-between pt-1">
                 <span>Nota:</span>
-                <strong class="text-cyan-400 text-sm">${notaMostrar} / ${act.puntajeMaximo || act.puntajeMax || '20'} pts</strong>
+                <strong class="text-cyan-400 text-sm">${notaMostrar} / ${act.puntajeMaximo || '20'} pts</strong>
               </div>
             </div> 
             ${act.feedback ? `<div class="text-[11px] bg-emerald-900/20 p-2.5 rounded-lg border border-emerald-800/50 text-emerald-200"><strong class="uppercase tracking-wider">Feedback Docente:</strong> ${act.feedback}</div>` : ''} 
@@ -582,7 +579,7 @@
 
       if (datosDocenteCache.entregas) {
         datosDocenteCache.entregas.forEach(ent => {
-          if(ent.nota && !isNaN(ent.nota)) {
+          if(ent.nota !== undefined && ent.nota !== "" && !isNaN(ent.nota)) {
             if(studentScores[ent.idEst] !== undefined) {
               studentScores[ent.idEst] += parseFloat(ent.nota);
               totalSum += parseFloat(ent.nota);
@@ -633,8 +630,8 @@
       const entregasActivas = datosDocenteCache.entregas.filter(e => e.enlace);
 
       entregasActivas.forEach(ent => {
-        const est = datosDocenteCache.estudiantes ? datosDocenteCache.estudiantes.find(e => e.id == ent.idEst) : null;
-        const act = datosDocenteCache.actividades ? datosDocenteCache.actividades.find(a => a.id == ent.idAct) : null;
+        const est = datosDocenteCache.estudiantes ? datosDocenteCache.estudiantes.find(e => String(e.id) === String(ent.idEst)) : null;
+        const act = datosDocenteCache.actividades ? datosDocenteCache.actividades.find(a => String(a.id) === String(ent.idAct)) : null;
         const fh = formatearFechaHora(ent.fechaEntrega);
 
         let enlaceHtml = ent.enlace || '#';
@@ -655,7 +652,7 @@
               <div class="text-slate-500">${fh.hora}</div>
             </td>
             <td class="p-3 text-[10px] uppercase font-bold text-slate-400">${ent.estado}</td> 
-            <td class="p-3 font-black text-emerald-400 text-lg">${ent.nota !== undefined && ent.nota !== "" ? ent.nota : '-'}</td> 
+            <td class="p-3 font-black text-emerald-400 text-lg">${ent.nota !== undefined && ent.nota !== "" && ent.nota !== null ? ent.nota : '-'}</td> 
             <td class="p-3"> 
               <button onclick="abrirModalCalificar('${ent.idAct}', '${ent.idEst}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded text-[10px] uppercase font-bold shadow-lg transition-all"><i class="fa-solid fa-star"></i> Calificar</button> 
             </td> 
@@ -664,9 +661,9 @@
     }
 
     function abrirModalCalificar(idAct, idEst) {
-      const ent = datosDocenteCache.entregas ? datosDocenteCache.entregas.find(e => e.idAct == idAct && e.idEst == idEst) : null;
-      const act = datosDocenteCache.actividades ? datosDocenteCache.actividades.find(a => a.id == idAct) : null;
-      const est = datosDocenteCache.estudiantes ? datosDocenteCache.estudiantes.find(e => e.id == idEst) : null;
+      const ent = datosDocenteCache.entregas ? datosDocenteCache.entregas.find(e => String(e.idAct) === String(idAct) && String(e.idEst) === String(idEst)) : null;
+      const act = datosDocenteCache.actividades ? datosDocenteCache.actividades.find(a => String(a.id) === String(idAct)) : null;
+      const est = datosDocenteCache.estudiantes ? datosDocenteCache.estudiantes.find(e => String(e.id) === String(idEst)) : null;
 
       currentCalificacion = ent;
 
@@ -710,7 +707,7 @@
             <td class="p-3 font-bold text-white">${act.titulo}</td> 
             <td class="p-3">${act.herramientas || '-'}</td> 
             <td class="p-3">${act.fechaLimite || '-'}</td> 
-            <td class="p-3">${act.puntajeMaximo || act.puntajeMax || 20}</td> 
+            <td class="p-3">${act.puntajeMaximo || 20}</td> 
             <td class="p-3 flex gap-2"> 
               <button onclick="editarActividad('${act.id}')" class="text-cyan-400 hover:text-cyan-300"><i class="fa-solid fa-pen"></i></button> 
               <button onclick="eliminarActividad('${act.id}')" class="text-rose-400 hover:text-rose-300"><i class="fa-solid fa-trash"></i></button> 
@@ -745,7 +742,7 @@
       document.getElementById('act-edit-titulo').value = act ? act.titulo : '';
       document.getElementById('act-edit-herramienta').value = act ? act.herramientas : '';
       document.getElementById('act-edit-fecha').value = act ? act.fechaLimite : '';
-      document.getElementById('act-edit-pts').value = act ? (act.puntajeMaximo || act.puntajeMax) : '';
+      document.getElementById('act-edit-pts').value = act ? act.puntajeMaximo : '';
       document.getElementById('modal-actividad').classList.remove('hidden');
     }
     function cerrarModalActividad() { document.getElementById('modal-actividad').classList.add('hidden'); }
