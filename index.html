@@ -171,20 +171,16 @@
 
       <div class="bg-slate-900/60 p-5 rounded-xl border border-slate-800 space-y-4">
         <h3 class="text-sm font-bold text-amber-400 uppercase tracking-wider flex items-center gap-2">
-          <i class="fa-solid fa-list-check"></i> Entregas Recibidas
+          <i class="fa-solid fa-list-check"></i> Acceso Docente Habilitado
         </h3>
-        <div id="teacher-loading" class="text-center py-6 text-slate-400 text-sm">
-          <i class="fa-solid fa-circle-notch fa-spin text-2xl text-amber-500 mb-2"></i>
-          <p>Cargando entregas...</p>
-        </div>
-        <div id="teacher-entregas-list" class="space-y-3 hidden"></div>
+        <p class="text-xs text-slate-400">Panel de control docente listo para revisiones.</p>
       </div>
     </section>
 
   </div>
 
   <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbzoi3UQgkg7Fy94mSUv957rlfSjR5kQ1hEtcgXoNIvk85yQ75E1grwmtacbPfICpwzh/exec";
+    const API_URL = "AQUI_TU_NUEVA_URL_DE_APPS_SCRIPT";
     const PIN_DOCENTE = "6527";
     const PIN_GENERICO = "0000";
 
@@ -202,17 +198,14 @@
       btnLogin.disabled = true;
       btnLogin.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Validando...`;
 
-      // Acceso Docente
       if (pin === PIN_DOCENTE) {
         document.getElementById('view-login').classList.add('hidden');
         document.getElementById('view-teacher').classList.remove('hidden');
-        cargarEntregasDocente();
         btnLogin.disabled = false;
         btnLogin.innerHTML = `<span>Ingresar</span><i class="fa-solid fa-arrow-right"></i>`;
         return;
       }
 
-      // Acceso Primer Ingreso (0000)
       if (pin === PIN_GENERICO) {
         cargarEstudiantesSinPin();
         btnLogin.disabled = false;
@@ -220,7 +213,6 @@
         return;
       }
 
-      // Acceso Estudiante Normal
       try {
         const response = await fetch(`${API_URL}?action=loginAlumno&pin=${pin}`);
         const data = await response.json();
@@ -249,7 +241,6 @@
       }
     }
 
-    // Cargar alumnos con PIN 0000 para registro
     async function cargarEstudiantesSinPin() {
       const selectSetup = document.getElementById('select-estudiante-setup');
       try {
@@ -271,7 +262,6 @@
       }
     }
 
-    // Guardar nuevo PIN
     async function guardarNuevoPin() {
       const studentId = document.getElementById('select-estudiante-setup').value;
       const newPin = document.getElementById('input-new-pin').value.trim();
@@ -292,6 +282,7 @@
       try {
         const response = await fetch(API_URL, {
           method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({ action: 'setupPin', studentId: studentId, newPin: newPin })
         });
         const data = await response.json();
@@ -300,9 +291,7 @@
           msg.textContent = "¡PIN guardado! Ya puedes ingresar con tu nuevo PIN.";
           msg.className = "text-xs text-center font-medium mt-2 text-emerald-400";
           msg.classList.remove('hidden');
-          setTimeout(() => {
-            logout();
-          }, 1500);
+          setTimeout(() => { logout(); }, 1500);
         } else {
           throw new Error(data.message);
         }
@@ -405,6 +394,7 @@
       try {
         const res = await fetch(API_URL, {
           method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify(payload)
         });
         const result = await res.json();
@@ -428,116 +418,12 @@
       }
     }
 
-    // Lógica para cargar entregas en la vista Docen-emerald-400 border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border-amber-500/30';
-
-        historyList.innerHTML += `
-          <div class="p-3 bg-slate-950 rounded-lg border border-slate-800 space-y-1">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-bold text-slate-200">${item.actividad}</span>
-              <span class="text-[10px] px-2 py-0.5 rounded-full border ${badgeColor}">${item.estado}</span>
-            </div>
-            <div class="flex items-center justify-between text-xs text-slate-400">
-              <span>Nota: <strong class="text-cyan-400">${item.nota}</strong></span>
-              <span class="text-[11px] text-slate-500">${item.observaciones ? item.observaciones : 'Sin observaciones'}</span>
-            </div>
-          </div>
-        `;
-      });
-    }
-
-    // Cargar Lista de Actividades desde el Sheet
-    async function fetchActividades() {
-      const selectAct = document.getElementById('select-actividad');
-      try {
-        const res = await fetch(`${API_URL}?action=getActividades`);
-        const actividades = await res.json();
-
-        selectAct.innerHTML = '<option value="">Selecciona una opción...</option>';
-        actividades.forEach(act => {
-          selectAct.innerHTML += `<option value="${act.id}">${act.titulo} (${act.herramienta})</option>`;
-        });
-      } catch (err) {
-        selectAct.innerHTML = '<option value="">Error al cargar actividades</option>';
-      }
-    }
-
-    // Poblar Selector de Compañeros
-    function populateParejasDropdown() {
-      const selectPareja = document.getElementById('select-pareja');
-      selectPareja.innerHTML = '<option value="">Selecciona un compañero/a...</option>';
-
-      allStudents.forEach(st => {
-        if (st.id !== currentStudent.id) {
-          selectPareja.innerHTML += `<option value="${st.id}">${st.nombre}</option>`;
-        }
-      });
-    }
-
-    // Mostrar/Ocultar Selector de Pareja
-    function toggleParejaSelect() {
-      const mode = document.getElementById('select-modalidad').value;
-      const container = document.getElementById('container-pareja');
-      if (mode === 'pareja') {
-        container.classList.remove('hidden');
-      } else {
-        container.classList.add('hidden');
-      }
-    }
-
-    // Enviar Entrega a Apps Script
-    async function enviarEntrega() {
-      const btnEnviar = document.getElementById('btn-enviar');
-      const msg = document.getElementById('entrega-msg');
-      const actividadId = document.getElementById('select-actividad').value;
-      const modalidad = document.getElementById('select-modalidad').value;
-      const alumno2 = modalidad === 'pareja' ? document.getElementById('select-pareja').value : "";
-      const enlace = document.getElementById('input-enlace').value.trim();
-
-      if (!actividadId || !enlace) return;
-
-      btnEnviar.disabled = true;
-      btnEnviar.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Guardando...`;
-      msg.classList.add('hidden');
-
-      const payload = {
-        actividadId: actividadId,
-        alumno1: currentStudent.id,
-        alumno2: alumno2,
-        enlace: enlace
-      };
-
-      try {
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          body: JSON.stringify(payload)
-        });
-        const result = await res.json();
-
-        if (result.success) {
-          msg.textContent = "¡Entrega guardada exitosamente!";
-          msg.className = "text-xs text-center font-medium mt-2 text-emerald-400";
-          document.getElementById('form-entrega').reset();
-          toggleParejaSelect();
-          // Recargar historial
-          loginEstudiante();
-        } else {
-          throw new Error(result.message);
-        }
-      } catch (err) {
-        msg.textContent = "Error al enviar la entrega. Intenta de nuevo.";
-        msg.className = "text-xs text-center font-medium mt-2 text-rose-400";
-      } finally {
-        msg.classList.remove('hidden');
-        btnEnviar.disabled = false;
-        btnEnviar.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i><span>Enviar Entregable</span>`;
-      }
-    }
-
-    // Cerrar Sesión
     function logout() {
       currentStudent = null;
       document.getElementById('input-pin').value = '';
       document.getElementById('view-dashboard').classList.add('hidden');
+      document.getElementById('view-setup-pin').classList.add('hidden');
+      document.getElementById('view-teacher').classList.add('hidden');
       document.getElementById('view-login').classList.remove('hidden');
     }
   </script>
