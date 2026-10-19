@@ -1,175 +1,362 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Optativa de Tecnología - Portal Académico</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<script>
-tailwind.config = {
-theme: {
-extend: {
-colors: { brandDark: '#0f172a', brandCard: '#1e293b', brandAccent: '#8b5cf6', brandCyan: '#06b6d4' }
-}
-}
-}
-</script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Optativa de Tecnología - Portal Académico</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { brandDark: '#0f172a', brandCard: '#1e293b', brandAccent: '#8b5cf6', brandCyan: '#06b6d4' }
+        }
+      }
+    }
+  </script>
 </head>
 <body class="bg-brandDark text-slate-100 min-h-screen font-sans antialiased flex flex-col items-center justify-center p-4">
-​<div class="w-full max-w-5xl bg-brandCard rounded-2xl shadow-2xl border border-slate-800 p-6 md:p-8">
-​<header class="text-center mb-8">
-<div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-tr from-violet-600 to-cyan-500 mb-4 shadow-lg">
-<i class="fa-solid fa-laptop-code text-2xl text-white"></i>
-</div>
-<h1 class="text-2xl md:text-3xl font-extrabold tracking-tight text-white">Optativa de Tecnología</h1>
-<p class="text-sm text-slate-400 mt-1">Plataforma Integral de Gestión y Progreso Académico</p>
-</header>
-​<!-- ================= 1. VISTA LOGIN ================= -->
-<section id="view-login" class="space-y-6 max-w-md mx-auto">
-<div class="bg-slate-900/60 p-6 rounded-xl border border-slate-800 text-center">
-<h2 class="text-lg font-semibold mb-2 text-violet-400">Acceso al Sistema</h2>
-<p class="text-xs text-slate-400 mb-6">Ingresa tu PIN personal o maestro. (Usa 0000 para configurar tu PIN inicial)</p>
-​<form id="form-login" onsubmit="event.preventDefault(); loginEstudiante();" class="space-y-4">
-<input type="password" id="input-pin" maxlength="4" placeholder="••••" required pattern="[0-9]{4}" inputmode="numeric"
-class="w-full text-center text-3xl font-mono tracking-widest bg-slate-950 border border-slate-700 rounded-lg px-4 py-3 text-cyan-400 focus:outline-none focus:border-violet-500">
-<button type="submit" id="btn-login"
-class="w-full bg-gradient-to-r from-violet-600 to-cyan-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:opacity-95 transition-all flex items-center justify-center gap-2">
-<span>Ingresar</span>
-<i class="fa-solid fa-arrow-right"></i>
-</button>
-</form>
-<p id="login-error" class="text-rose-400 text-xs mt-3 hidden"></p>
-</div>
-</section>
-​<!-- ================= 2. CONFIGURACIÓN PIN 0000 ================= -->
-<section id="view-setup-pin" class="hidden space-y-6 max-w-md mx-auto">
-<div class="bg-slate-900/60 p-6 rounded-xl border border-slate-800 text-center">
-<h2 class="text-lg font-semibold mb-2 text-cyan-400">Primer Acceso</h2>
-<p class="text-xs text-slate-400 mb-6">Selecciona tu nombre y crea tu PIN personal de 4 dígitos.</p>
-<form id="form-setup-pin" onsubmit="event.preventDefault(); guardarNuevoPin();" class="space-y-4 text-left">
-<div>
-<label class="block text-xs font-medium text-slate-300 mb-1">Selecciona tu Nombre</label>
-<select id="select-estudiante-setup" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-200">
-<option value="">Cargando...</option>
-</select>
-</div>
-<div>
-<label class="block text-xs font-medium text-slate-300 mb-1">Nuevo PIN (4 dígitos)</label>
-<input type="password" id="input-new-pin" maxlength="4" placeholder="••••" required pattern="[0-9]{4}" inputmode="numeric"
-class="w-full text-center text-2xl font-mono tracking-widest bg-slate-950 border border-slate-700 rounded-lg px-4 py-2 text-cyan-400">
-</div>
-<button type="submit" id="btn-save-pin" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2">
-<span>Guardar PIN</span>
-<i class="fa-solid fa-check"></i>
-</button>
-</form>
-<p id="setup-msg" class="text-xs mt-2 hidden"></p>
-</div>
-</section>
-​<!-- ================= 3. PANEL DEL ESTUDIANTE ================= -->
-<section id="view-dashboard" class="hidden space-y-6">
-​<!-- HEADER ESTUDIANTE -->
-<div class="flex items-center justify-between bg-slate-900/80 p-4 rounded-xl border border-slate-800">
-<div>
-<span class="text-xs text-slate-400">Estudiante Activo</span>
-<h2 id="student-name" class="text-xl md:text-2xl font-bold text-cyan-400">Cargando...</h2>
-</div>
-<div class="text-right">
-<span class="text-xs text-slate-400 uppercase tracking-wider font-bold">Calificación Total</span>
-<h2 id="student-score" class="text-xl md:text-2xl font-black text-emerald-400">0 / 20 pts</h2>
-</div>
-</div>
-​<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-<!-- ZONA DE CARGA (COLUMNA IZQUIERDA) -->
-<div class="lg:col-span-1 bg-slate-900/60 p-5 rounded-xl border border-slate-800 space-y-4 h-fit">
-<h3 class="text-sm font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-2">
-<i class="fa-solid fa-cloud-arrow-up"></i> Cargar Entregable
-</h3>
-<form id="form-entrega" onsubmit="event.preventDefault(); enviarEntregaNueva();" class="space-y-4">
-<div>
-<label class="block text-xs font-medium text-slate-300 mb-1">Actividad a Entregar</label>
-<select id="select-actividad-carga" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-slate-200">
-<option value="">Cargando actividades...</option>
-</select>
-</div>
-<div>
-<label class="block text-xs font-medium text-slate-300 mb-1">Modalidad de Trabajo</label>
-<select id="select-modalidad" onchange="toggleParejaSelect()" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-slate-200">
-<option value="individual">Individual</option>
-<option value="pareja">En Pareja</option>
-</select>
-</div>
-<div id="container-pareja" class="hidden">
-<label class="block text-xs font-medium text-slate-300 mb-1">Selecciona a tu Compañero/a</label>
-<select id="select-pareja" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-slate-200">
-<option value="">Selecciona un integrante...</option>
-</select>
-</div>
-<div>
-<label class="block text-xs font-medium text-slate-300 mb-1">Enlace del Proyecto (Drive, Canva, CapCut...)</label>
-<input type="url" id="input-enlace-carga" placeholder="https://..." required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-slate-200">
-</div>
-<div>
-<label class="block text-xs font-medium text-slate-300 mb-1">Comentario al Docente (Opcional)</label>
-<input type="text" id="input-comentario-carga" placeholder="Comentario..." class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-slate-200">
-</div>
-<button type="submit" id="btn-enviar-carga" class="w-full bg-gradient-to-r from-cyan-600 to-violet-600 hover:from-cyan-500 hover:to-violet-500 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all">
-<span>Enviar Actividad</span>
-</button>
-</form>
-<p id="entrega-msg" class="text-xs text-center font-medium mt-2 hidden"></p>
-</div>
-​<!-- HISTORIAL DE FICHAS (COLUMNA DERECHA) -->
-<div class="lg:col-span-2 space-y-4">
-<div class="flex justify-between items-center pb-2 border-b border-slate-800">
-<h3 class="text-sm font-bold text-violet-400 uppercase tracking-wider flex items-center gap-2">
-<i class="fa-solid fa-list-check"></i> Historial de Actividades
-</h3>
-<button onclick="logout()" class="text-rose-400 text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 transition-colors">Cerrar Sesión</button>
-</div>
-<div id="fichas-actividades" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
-</div>
-</div>
-</section>
-​<!-- ================= 4. PANEL DEL DOCENTE ================= -->
-<section id="view-teacher" class="hidden space-y-6">
-​<!-- HEADER DOCENTE -->
-<div class="flex flex-col md:flex-row md:items-center justify-between bg-slate-900/80 p-4 rounded-xl border border-slate-800 gap-4">
-<div>
-<span class="text-xs text-amber-400 font-bold uppercase">Panel Docente</span>
-<h2 class="text-xl md:text-2xl font-bold text-white">Gestión Académica</h2>
-</div>
-<div class="flex items-center gap-4">
-<div class="text-right px-4 border-r border-slate-700">
-<span class="text-xs text-slate-400 uppercase font-bold">Promedio del Grupo</span>
-<h2 id="teacher-avg" class="text-xl md:text-2xl font-black text-amber-400">0 / 20 pts</h2>
-</div>
-<button onclick="logout()" class="text-rose-400 text-xs font-semibold px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition-colors">Salir</button>
-</div>
-</div>
-​<!-- PESTAÑAS DE NAVEGACIÓN DOCENTE -->
-<div class="flex gap-2 border-b border-slate-800 pb-3 overflow-x-auto">
-<button onclick="switchTabDocente('estudiantes')" id="tab-btn-estudiantes" class="px-4 py-2 text-xs font-bold rounded-lg bg-violet-600 text-white transition-colors whitespace-nowrap">Estudiantes</button>
-<button onclick="switchTabDocente('entregas')" id="tab-btn-entregas" class="px-4 py-2 text-xs font-bold rounded-lg bg-slate-800 text-slate-400 transition-colors whitespace-nowrap">Entregas Recibidas</button>
-<button onclick="switchTabDocente('actividades')" id="tab-btn-actividades" class="px-4 py-2 text-xs font-bold rounded-lg bg-slate-800 text-slate-400 transition-colors whitespace-nowrap">Actividades</button>
-</div>
-​<!-- SECCIÓN: ESTUDIANTES -->
-<div id="docente-estudiantes" class="space-y-4">
-<div class="flex justify-between items-center">
-<h3 class="text-sm font-bold text-cyan-400"><i class="fa-solid fa-users"></i> Listado de Estudiantes</h3>
-<button onclick="abrirModalEstudiante()" class="bg-cyan-600 hover:bg-cyan-500 text-white text-xs px-3 py-2 rounded-lg"><i class="fa-solid fa-plus"></i> Nuevo Alumno</button>
-</div>
-<div class="overflow-x-auto bg-slate-900/40 rounded-xl border border-slate-800">
-<table class="w-full text-left text-xs text-slate-300">
-<thead class="bg-slate-900 uppercase text-slate-400">
-<tr>
-<th class="p-3">ID</th><th class="p-3">Nombre</th><th class="p-3">Estado General</th><th class="p-3 text-emerald-400">Nota Total</th><th class="p-3">Acciones</th>
-</tr>
-</thead>
-<tbody id="tabla-estudiantes-body" class="divide-y divide-slate-800"></tbody>
-</table>
-</div>
+
+  <div class="w-full max-w-5xl bg-brandCard rounded-2xl shadow-2xl border border-slate-800 p-6 md:p-8">
+
+    <header class="text-center mb-8">
+      <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-tr from-violet-600 to-cyan-500 mb-4 shadow-lg">
+        <i class="fa-solid fa-laptop-code text-2xl text-white"></i>
+      </div>
+      <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight text-white">Optativa de Tecnología</h1>
+      <p class="text-sm text-slate-400 mt-1">Plataforma Integral de Gestión y Progreso Académico</p>
+    </header>
+
+    <!-- ================= 1. VISTA LOGIN ================= -->
+    <section id="view-login" class="space-y-6 max-w-md mx-auto">
+      <div class="bg-slate-900/60 p-6 rounded-xl border border-slate-800 text-center">
+        <h2 class="text-lg font-semibold mb-2 text-violet-400">Acceso al Sistema</h2>
+        <p class="text-xs text-slate-400 mb-6">Ingresa tu PIN personal o maestro. (Usa 0000 para configurar tu PIN inicial)</p>
+        
+        <form id="form-login" onsubmit="event.preventDefault(); loginEstudiante();" class="space-y-4">
+          <input type="password" id="input-pin" maxlength="4" placeholder="••••" required pattern="[0-9]{4}" inputmode="numeric"
+                 class="w-full text-center text-3xl font-mono tracking-widest bg-slate-950 border border-slate-700 rounded-lg px-4 py-3 text-cyan-400 focus:outline-none focus:border-violet-500">
+          <button type="submit" id="btn-login"
+                  class="w-full bg-gradient-to-r from-violet-600 to-cyan-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:opacity-95 transition-all">
+            Ingresar
+          </button>
+        </form>
+        <p id="login-error" class="text-rose-400 text-xs mt-3 hidden"></p>
+      </div>
+    </section>
+
+    <!-- ================= 2. CONFIGURACIÓN PIN 0000 ================= -->
+    <section id="view-setup-pin" class="hidden space-y-6 max-w-md mx-auto">
+      <div class="bg-slate-900/60 p-6 rounded-xl border border-slate-800 text-center">
+        <h2 class="text-lg font-semibold mb-2 text-cyan-400">Primer Acceso</h2>
+        <form id="form-setup-pin" onsubmit="event.preventDefault(); guardarNuevoPin();" class="space-y-4 text-left">
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Selecciona tu Nombre</label>
+            <select id="select-estudiante-setup" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-200">
+              <option value="">Cargando...</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Nuevo PIN (4 dígitos)</label>
+            <input type="password" id="input-new-pin" maxlength="4" placeholder="••••" required pattern="[0-9]{4}" inputmode="numeric"
+                   class="w-full text-center text-2xl font-mono tracking-widest bg-slate-950 border border-slate-700 rounded-lg px-4 py-2 text-cyan-400">
+          </div>
+          <button type="submit" id="btn-save-pin" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-3 rounded-lg">Guardar PIN</button>
+        </form>
+        <p id="setup-msg" class="text-xs mt-2 hidden"></p>
+      </div>
+    </section>
+
+    <!-- ================= 3. PANEL DEL ESTUDIANTE ================= -->
+    <section id="view-dashboard" class="hidden space-y-6">
+      
+      <!-- HEADER ESTUDIANTE -->
+      <div class="flex items-center justify-between bg-slate-900/80 p-4 rounded-xl border border-slate-800">
+        <div>
+          <span class="text-xs text-slate-400">Estudiante Activo</span>
+          <h2 id="student-name" class="text-xl md:text-2xl font-bold text-cyan-400">Cargando...</h2>
+        </div>
+        <div class="text-right">
+          <span class="text-xs text-slate-400 uppercase tracking-wider font-bold">Calificación Total</span>
+          <h2 id="student-score" class="text-xl md:text-2xl font-black text-emerald-400">0 / 20 pts</h2>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- ZONA DE CARGA (COLUMNA IZQUIERDA) -->
+        <div class="lg:col-span-1 bg-slate-900/60 p-5 rounded-xl border border-slate-800 space-y-4 h-fit">
+          <h3 class="text-sm font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-2">
+            <i class="fa-solid fa-cloud-arrow-up"></i> Cargar Entregable
+          </h3>
+          <form id="form-entrega" onsubmit="event.preventDefault(); enviarEntregaNueva();" class="space-y-4">
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1">Actividad a Entregar</label>
+              <select id="select-actividad-carga" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-slate-200">
+                <option value="">Cargando...</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1">Enlace del Proyecto (Drive, Canva...)</label>
+              <input type="url" id="input-enlace-carga" placeholder="https://..." required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-slate-200">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1">Comentario al Docente (Opcional)</label>
+              <input type="text" id="input-comentario-carga" placeholder="Comentario..." class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-slate-200">
+            </div>
+            <button type="submit" id="btn-enviar-carga" class="w-full bg-gradient-to-r from-cyan-600 to-violet-600 hover:from-cyan-500 hover:to-violet-500 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all">
+              <span>Enviar Actividad</span>
+            </button>
+          </form>
+        </div>
+
+        <!-- HISTORIAL DE FICHAS (COLUMNA DERECHA) -->
+        <div class="lg:col-span-2 space-y-4">
+          <div class="flex justify-between items-center pb-2 border-b border-slate-800">
+            <h3 class="text-sm font-bold text-violet-400 uppercase tracking-wider flex items-center gap-2">
+              <i class="fa-solid fa-list-check"></i> Historial de Actividades
+            </h3>
+            <button onclick="logout()" class="text-rose-400 text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 transition-colors">Cerrar Sesión</button>
+          </div>
+          <div id="fichas-actividades" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 4. PANEL DEL DOCENTE ================= -->
+    <section id="view-teacher" class="hidden space-y-6">
+      
+      <!-- HEADER DOCENTE -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between bg-slate-900/80 p-4 rounded-xl border border-slate-800 gap-4">
+        <div>
+          <span class="text-xs text-amber-400 font-bold uppercase">Panel Docente</span>
+          <h2 class="text-xl md:text-2xl font-bold text-white">Gestión Académica</h2>
+        </div>
+        <div class="flex items-center gap-4">
+          <div class="text-right px-4 border-r border-slate-700">
+            <span class="text-xs text-slate-400 uppercase font-bold">Promedio del Grupo</span>
+            <h2 id="teacher-avg" class="text-xl md:text-2xl font-black text-amber-400">0 / 20 pts</h2>
+          </div>
+          <button onclick="logout()" class="text-rose-400 text-xs font-semibold px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition-colors">Salir</button>
+        </div>
+      </div>
+
+      <!-- PESTAÑAS DE NAVEGACIÓN DOCENTE -->
+      <div class="flex gap-2 border-b border-slate-800 pb-3 overflow-x-auto">
+        <button onclick="switchTabDocente('estudiantes')" id="tab-btn-estudiantes" class="px-4 py-2 text-xs font-bold rounded-lg bg-violet-600 text-white transition-colors whitespace-nowrap">Estudiantes</button>
+        <button onclick="switchTabDocente('entregas')" id="tab-btn-entregas" class="px-4 py-2 text-xs font-bold rounded-lg bg-slate-800 text-slate-400 transition-colors whitespace-nowrap">Entregas Recibidas</button>
+        <button onclick="switchTabDocente('actividades')" id="tab-btn-actividades" class="px-4 py-2 text-xs font-bold rounded-lg bg-slate-800 text-slate-400 transition-colors whitespace-nowrap">Actividades</button>
+      </div>
+
+      <!-- SECCIÓN: ESTUDIANTES -->
+      <div id="docente-estudiantes" class="space-y-4">
+        <div class="flex justify-between items-center">
+          <h3 class="text-sm font-bold text-cyan-400"><i class="fa-solid fa-users"></i> Listado de Estudiantes</h3>
+          <button onclick="abrirModalEstudiante()" class="bg-cyan-600 hover:bg-cyan-500 text-white text-xs px-3 py-2 rounded-lg"><i class="fa-solid fa-plus"></i> Nuevo Alumno</button>
+        </div>
+        <div class="overflow-x-auto bg-slate-900/40 rounded-xl border border-slate-800">
+          <table class="w-full text-left text-xs text-slate-300">
+            <thead class="bg-slate-900 uppercase text-slate-400">
+              <tr>
+                <th class="p-3">ID</th><th class="p-3">Nombre</th><th class="p-3">Equipo</th><th class="p-3 text-emerald-400">Nota Total</th><th class="p-3">Estado</th><th class="p-3">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-estudiantes-body" class="divide-y divide-slate-800"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- SECCIÓN: ENTREGAS RECIBIDAS (NUEVA) -->
+      <div id="docente-entregas" class="space-y-4 hidden">
+        <div class="flex justify-between items-center">
+          <h3 class="text-sm font-bold text-emerald-400"><i class="fa-solid fa-inbox"></i> Trabajos por Calificar</h3>
+        </div>
+        <div class="overflow-x-auto bg-slate-900/40 rounded-xl border border-slate-800">
+          <table class="w-full text-left text-xs text-slate-300">
+            <thead class="bg-slate-900 uppercase text-slate-400">
+              <tr>
+                <th class="p-3">Estudiante</th><th class="p-3">Actividad</th><th class="p-3">Enlace / Trabajo</th><th class="p-3">Estado</th><th class="p-3">Nota</th><th class="p-3">Acción</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-entregas-body" class="divide-y divide-slate-800"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- SECCIÓN: ACTIVIDADES -->
+      <div id="docente-actividades" class="space-y-4 hidden">
+        <div class="flex justify-between items-center">
+          <h3 class="text-sm font-bold text-violet-400"><i class="fa-solid fa-calendar-days"></i> Cronograma de Actividades</h3>
+          <button onclick="abrirModalActividad()" class="bg-violet-600 hover:bg-violet-500 text-white text-xs px-3 py-2 rounded-lg"><i class="fa-solid fa-plus"></i> Nueva Actividad</button>
+        </div>
+        <div class="overflow-x-auto bg-slate-900/40 rounded-xl border border-slate-800">
+          <table class="w-full text-left text-xs text-slate-300">
+            <thead class="bg-slate-900 uppercase text-slate-400">
+              <tr>
+                <th class="p-3">ID</th><th class="p-3">Título</th><th class="p-3">Herramienta</th><th class="p-3">Límite</th><th class="p-3">Max Pts</th><th class="p-3">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-actividades-body" class="divide-y divide-slate-800"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- ================= MODALES DE GESTIÓN ================= -->
+  
+  <!-- MODAL CALIFICAR ENTREGA -->
+  <div id="modal-calificar" class="fixed inset-0 bg-black/80 flex items-center justify-center hidden p-4 z-50">
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 w-full max-w-md space-y-4 shadow-2xl">
+      <h3 class="text-sm font-bold text-emerald-400 uppercase tracking-wider"><i class="fa-solid fa-check-double"></i> Calificar Entrega</h3>
+      <input type="hidden" id="calif-idAct"><input type="hidden" id="calif-idEst">
+      
+      <div class="p-3 bg-slate-950 rounded-lg border border-slate-800">
+        <p id="calif-info-est" class="text-xs font-bold text-white"></p>
+        <p id="calif-info-act" class="text-[10px] text-violet-400 uppercase"></p>
+      </div>
+
+      <div class="grid grid-cols-3 gap-4">
+        <div class="col-span-1">
+          <label class="block text-xs text-slate-300 mb-1">Nota Asignada</label>
+          <input type="number" id="calif-nota" class="w-full bg-slate-950 border border-emerald-700/50 rounded-lg p-2 text-sm text-emerald-400 font-bold focus:outline-none" step="0.1">
+        </div>
+        <div class="col-span-2">
+          <label class="block text-xs text-slate-300 mb-1">Feedback Privado</label>
+          <textarea id="calif-obs" rows="2" placeholder="Buen trabajo..." class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-slate-200 focus:outline-none"></textarea>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-4">
+        <button onclick="cerrarModalCalificar()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg text-xs transition-colors">Cancelar</button>
+        <button onclick="guardarCalificacionModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-xs font-bold transition-colors">Guardar Calificación</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL ESTUDIANTE -->
+  <div id="modal-estudiante" class="fixed inset-0 bg-black/80 flex items-center justify-center hidden p-4 z-50">
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 w-full max-w-md space-y-4">
+      <h3 class="text-sm font-bold text-cyan-400 uppercase tracking-wider">Gestión de Estudiante</h3>
+      <input type="hidden" id="est-edit-id">
+      <div>
+        <label class="block text-xs text-slate-300 mb-1">Nombre y Apellido</label>
+        <input type="text" id="est-edit-nombre" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-slate-200 focus:outline-none">
+      </div>
+      <div>
+        <label class="block text-xs text-slate-300 mb-1">Equipo</label>
+        <input type="text" id="est-edit-equipo" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-slate-200 focus:outline-none">
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="cerrarModalEstudiante()" class="bg-slate-800 text-slate-300 px-4 py-2 rounded-lg text-xs">Cancelar</button>
+        <button onclick="guardarEstudianteData()" class="bg-cyan-600 text-white px-4 py-2 rounded-lg text-xs font-bold">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL ACTIVIDAD -->
+  <div id="modal-actividad" class="fixed inset-0 bg-black/80 flex items-center justify-center hidden p-4 z-50">
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 w-full max-w-md space-y-4">
+      <h3 class="text-sm font-bold text-violet-400 uppercase tracking-wider">Gestión de Actividad</h3>
+      <input type="hidden" id="act-edit-id">
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="block text-xs text-slate-300 mb-1">ID (ej. Act-8)</label>
+          <input type="text" id="act-edit-idtxt" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-slate-200">
+        </div>
+        <div>
+          <label class="block text-xs text-slate-300 mb-1">Puntaje Máximo</label>
+          <input type="number" id="act-edit-pts" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-slate-200">
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs text-slate-300 mb-1">Título</label>
+        <input type="text" id="act-edit-titulo" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-slate-200">
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="block text-xs text-slate-300 mb-1">Herramientas</label>
+          <input type="text" id="act-edit-herramienta" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-slate-200">
+        </div>
+        <div>
+          <label class="block text-xs text-slate-300 mb-1">Fecha Límite</label>
+          <input type="text" id="act-edit-fecha" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-slate-200">
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="cerrarModalActividad()" class="bg-slate-800 text-slate-300 px-4 py-2 rounded-lg text-xs">Cancelar</button>
+        <button onclick="guardarActividadData()" class="bg-violet-600 text-white px-4 py-2 rounded-lg text-xs font-bold">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCRIPTS Y LÓGICA -->
+  <script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbzoi3UQgkg7Fy94mSUv957rlfSjR5kQ1hEtcgXoNIvk85yQ75E1grwmtacbPfICpwzh/exec"; // Asegúrate de reponer tu URL
+    const PIN_DOCENTE = "6527";
+    const PIN_GENERICO = "0000";
+
+    let currentStudent = null;
+    let datosDocenteCache = null;
+    let studentScores = {};
+    let currentCalificacion = null;
+
+    // Utilidad: Separar enlace y feedback para no sobrescribir datos
+    function parseObs(obsText) {
+      if (!obsText) return { enlace: "", feedback: "" };
+      let parts = obsText.split("| Feedback:");
+      return {
+        enlace: parts[0].trim(),
+        feedback: parts.length > 1 ? parts[1].trim() : ""
+      };
+    }
+
+    // ================= LÓGICA DE INGRESO =================
+    async function loginEstudiante() {
+      const pin = document.getElementById('input-pin').value.trim();
+      const errorMsg = document.getElementById('login-error');
+      if (pin.length !== 4) return;
+
+      errorMsg.classList.add('hidden');
+
+      if (pin === PIN_DOCENTE) {
+        document.getElementById('view-login').classList.add('hidden');
+        document.getElementById('view-teacher').classList.remove('hidden');
+        cargarPanelDocente();
+        return;
+      }
+
+      if (pin === PIN_GENERICO) {
+        cargarEstudiantesSinPin();
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_URL}?action=loginAlumno&pin=${pin}`);
+        const data = await res.json();
+        
+        if (data.success) {
+          currentStudent = data.alumno;
+          
+          // Cálculo de sumatoria sobre 20
+          let totalNota = 0;
+          data.historial.forEach(h => {
+            if(h.nota && !isNaN(h.nota)) totalNota += parseFloat(h.nota);
+          });
+          document.getElementById('student-score').innerText = `${totalNota} / 20 pts`;
+          
+          document.getElementById('view-login').classList.add('hidden');
+          document.getElementById('view-dashboard').classList.remove('hidden');
+          document.getElementById('student-name').textContent = currentStudent.nombre;
+          
+          renderFichasEstudiante(data.historial);
+          fetchActividadesCarga();
+        } else {
+          errorMsg.textContent = data.message;
+          errorMsg.classList.remove('hidden');
+        }
+      } catch (err) {
+        errorMsg.textContent = div>
 </div>
 ​<!-- SECCIÓN: ENTREGAS RECIBIDAS -->
 <div id="docente-entregas" class="space-y-4 hidden">
