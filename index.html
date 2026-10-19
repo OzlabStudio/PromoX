@@ -407,7 +407,6 @@
         }
 
         actividades.forEach(act => {
-          // Mapeo flexible para leer los nombres de columnas de Google Sheets (incluyendo "Puntaje Maximo")
           const pts = act.puntajeMaximo || act.puntajeMax || act["Puntaje Maximo"] || 0;
           const tituloAct = act.titulo || act.Título || act["Título de Actividad"] || "Actividad";
           const herramientaAct = act.herramientas || act.Herramientas || act.Herramienta || 'General';
@@ -502,9 +501,30 @@
         return;
       }
 
+      function formatearFecha(fechaStr) {
+        if (!fechaStr) return '-';
+        const date = new Date(fechaStr);
+        if (isNaN(date.getTime())) return fechaStr;
+
+        const dia = String(date.getDate()).padStart(2, '0');
+        const mes = String(date.getMonth() + 1).padStart(2, '0');
+        const anio = date.getFullYear();
+
+        let horas = date.getHours();
+        const minutos = String(date.getMinutes()).padStart(2, '0');
+        const ampm = horas >= 12 ? 'p.m.' : 'a.m.';
+        horas = horas % 12;
+        horas = horas ? horas : 12;
+
+        return `${dia}/${mes}/${anio} - ${horas}:${minutos} ${ampm}`;
+      }
+
       historial.forEach(act => {
         const isEntregado = act.estado === "Entregado" || act.estado === "Calificado";
         const parsed = parseObs(act.observaciones);
+        
+        const fechaFormateada = formatearFecha(act.fechaLimite);
+        const notaMostrar = (act.nota !== undefined && act.nota !== "" && !isNaN(act.nota)) ? act.nota : '-';
 
         container.innerHTML += `
           <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 space-y-3 shadow-lg"> 
@@ -516,10 +536,10 @@
               <span class="text-[10px] px-2 py-0.5 rounded-full border ${isEntregado ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border-amber-500/30'}">${act.estado}</span> 
             </div> 
             <div class="flex justify-between items-center text-xs text-slate-400 border-t border-slate-800/50 pt-2 mt-2"> 
-              <span>Límite: ${act.fechaLimite || '-'}</span> 
-              <span>Nota: <strong class="text-cyan-400">${act.nota || '-'} / ${act.puntajeMaximo || act.puntajeMax || '20'}</strong></span> 
+              <span>Límite: ${fechaFormateada}</span> 
+              <span>Nota: <strong class="text-cyan-400">${notaMostrar} / ${act.puntajeMaximo || act.puntajeMax || '20'}</strong></span> 
             </div> 
-            ${parsed.feedback ? `<div class="text-[11px] bg-emerald-900/20 p-2.5 rounded-lg border border-emerald-800/50 text-emerald-200"><strong class="uppercase tracking-wider">Feedback Docente:</strong> ${parsed.feedback}</div>` : ''} 
+            ${act.feedback ? `<div class="text-[11px] bg-emerald-900/20 p-2.5 rounded-lg border border-emerald-800/50 text-emerald-200"><strong class="uppercase tracking-wider">Feedback Docente:</strong> ${act.feedback}</div>` : ''} 
           </div>`;
       });
     }
@@ -602,14 +622,13 @@
       tbody.innerHTML = '';
       if (!datosDocenteCache.entregas) return;
 
-      const entregasActivas = datosDocenteCache.entregas.filter(e => e.estado !== 'Pendiente');
+      const entregasActivas = datosDocenteCache.entregas.filter(e => e.enlace);
 
       entregasActivas.forEach(ent => {
         const est = datosDocenteCache.estudiantes ? datosDocenteCache.estudiantes.find(e => e.id == ent.idEst) : null;
         const act = datosDocenteCache.actividades ? datosDocenteCache.actividades.find(a => a.id == ent.idAct) : null;
-        const parsed = parseObs(ent.observaciones);
 
-        let enlaceHtml = parsed.enlace || ent.enlace || '#';
+        let enlaceHtml = ent.enlace || '#';
         if(enlaceHtml.includes('http')) {
           const urlMatch = enlaceHtml.match(/https?:\/\/[^\s|]+/);
           if (urlMatch) {
@@ -644,8 +663,7 @@
       document.getElementById('calif-info-act').innerText = act ? act.titulo : idAct;
 
       document.getElementById('calif-nota').value = ent ? ent.nota : '';
-      const parsed = parseObs(ent ? ent.observaciones : '');
-      document.getElementById('calif-obs').value = parsed.feedback;
+      document.getElementById('calif-obs').value = ent ? (ent.feedback || '') : '';
 
       document.getElementById('modal-calificar').classList.remove('hidden');
     }
@@ -658,14 +676,11 @@
       const nota = document.getElementById('calif-nota').value;
       const feedback = document.getElementById('calif-obs').value;
 
-      const parsed = parseObs(currentCalificacion ? currentCalificacion.observaciones : '');
-      const observacionesFinales = (parsed.enlace || '') + " | Feedback: " + feedback;
-
       cerrarModalCalificar();
 
       await fetch(API_URL, {
         method: 'POST',
-        body: JSON.stringify({ action: 'guardarCalificacion', idAct, idEst, nota, observaciones: observacionesFinales, estado: nota ? 'Calificado' : 'Entregado' })
+        body: JSON.stringify({ action: 'guardarCalificacion', idAct, idEst, nota, feedback })
       });
       cargarPanelDocente();
     }
