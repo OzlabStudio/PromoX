@@ -407,12 +407,12 @@
         }
 
         actividades.forEach(act => {
-          // Se incorporan variantes (incluyendo "Puntaje Maximo" y "Título") para evitar fallas por mayúsculas/espacios en Google Sheets
+          // Mapeo flexible para leer los nombres de columnas de Google Sheets (incluyendo "Puntaje Maximo")
           const pts = act.puntajeMaximo || act.puntajeMax || act["Puntaje Maximo"] || 0;
           const tituloAct = act.titulo || act.Título || act["Título de Actividad"] || "Actividad";
           const herramientaAct = act.herramientas || act.Herramientas || act.Herramienta || 'General';
 
-          select.innerHTML += `<option value="${act.id}">${tituloAct} (${herramientaAct}) - Max:${pts} pts</option>`;
+          select.innerHTML += `<option value="${act.id}">${tituloAct} (${herramientaAct}) - Max: ${pts} pts</option>`;
         });
       } catch (err) {
         select.innerHTML = '<option value="">Error al cargar actividades</option>';
@@ -510,4 +510,284 @@
           <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 space-y-3 shadow-lg"> 
             <div class="flex justify-between items-start"> 
               <div> 
-                <span class="text-[10px] text-violet-4
+                <span class="text-[10px] text-violet-400 font-bold uppercase">${act.idAct || ''} ${act.herramientas ? '• ' + act.herramientas : ''}</span> 
+                <h4 class="text-sm font-bold text-white">${act.titulo || act.actividad || 'Actividad'}</h4> 
+              </div> 
+              <span class="text-[10px] px-2 py-0.5 rounded-full border ${isEntregado ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border-amber-500/30'}">${act.estado}</span> 
+            </div> 
+            <div class="flex justify-between items-center text-xs text-slate-400 border-t border-slate-800/50 pt-2 mt-2"> 
+              <span>Límite: ${act.fechaLimite || '-'}</span> 
+              <span>Nota: <strong class="text-cyan-400">${act.nota || '-'} / ${act.puntajeMaximo || act.puntajeMax || '20'}</strong></span> 
+            </div> 
+            ${parsed.feedback ? `<div class="text-[11px] bg-emerald-900/20 p-2.5 rounded-lg border border-emerald-800/50 text-emerald-200"><strong class="uppercase tracking-wider">Feedback Docente:</strong> ${parsed.feedback}</div>` : ''} 
+          </div>`;
+      });
+    }
+
+    // ================= FUNCIONES DE DOCENTE =================
+    async function cargarPanelDocente() {
+      try {
+        const res = await fetch(`${API_URL}?action=getDatosDocente`);
+        datosDocenteCache = await res.json();
+        if (datosDocenteCache && datosDocenteCache.success) {
+          calcularMetricasDocente();
+          renderTablaEstudiantes();
+          renderTablaEntregas();
+          renderTablaActividades();
+        }
+      } catch (err) {
+        console.error("Error al cargar panel docente", err);
+      }
+    }
+
+    function calcularMetricasDocente() {
+      studentScores = {};
+      let totalSum = 0;
+      let estudiantesActivos = 0;
+
+      if (!datosDocenteCache.estudiantes) return;
+
+      datosDocenteCache.estudiantes.forEach(st => {
+        studentScores[st.id] = 0;
+        if(st.estadoGeneral !== "Inactivo") estudiantesActivos++;
+      });
+
+      if (datosDocenteCache.entregas) {
+        datosDocenteCache.entregas.forEach(ent => {
+          if(ent.nota && !isNaN(ent.nota)) {
+            if(studentScores[ent.idEst] !== undefined) {
+              studentScores[ent.idEst] += parseFloat(ent.nota);
+              totalSum += parseFloat(ent.nota);
+            }
+          }
+        });
+      }
+
+      const avg = estudiantesActivos > 0 ? (totalSum / estudiantesActivos).toFixed(1) : 0;
+      document.getElementById('teacher-avg').innerText = `${avg} / 20 pts`;
+    }
+
+    function switchTabDocente(tab) {
+      document.getElementById('docente-estudiantes').classList.toggle('hidden', tab !== 'estudiantes');
+      document.getElementById('docente-entregas').classList.toggle('hidden', tab !== 'entregas');
+      document.getElementById('docente-actividades').classList.toggle('hidden', tab !== 'actividades');
+
+      document.getElementById('tab-btn-estudiantes').className = tab === 'estudiantes' ? "px-4 py-2 text-xs font-bold rounded-lg bg-violet-600 text-white whitespace-nowrap" : "px-4 py-2 text-xs font-bold rounded-lg bg-slate-800 text-slate-400 whitespace-nowrap";
+      document.getElementById('tab-btn-entregas').className = tab === 'entregas' ? "px-4 py-2 text-xs font-bold rounded-lg bg-violet-600 text-white whitespace-nowrap" : "px-4 py-2 text-xs font-bold rounded-lg bg-slate-800 text-slate-400 whitespace-nowrap";
+      document.getElementById('tab-btn-actividades').className = tab === 'actividades' ? "px-4 py-2 text-xs font-bold rounded-lg bg-violet-600 text-white whitespace-nowrap" : "px-4 py-2 text-xs font-bold rounded-lg bg-slate-800 text-slate-400 whitespace-nowrap";
+    }
+
+    function renderTablaEstudiantes() {
+      const tbody = document.getElementById('tabla-estudiantes-body');
+      tbody.innerHTML = '';
+      if (!datosDocenteCache.estudiantes) return;
+
+      datosDocenteCache.estudiantes.forEach(st => {
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-900/80 border-b border-slate-800/50"> 
+            <td class="p-3">${st.id}</td> 
+            <td class="p-3 font-bold text-white">${st.nombre}</td> 
+            <td class="p-3">${st.estadoGeneral || 'Activo'}</td> 
+            <td class="p-3 text-emerald-400 font-bold">${studentScores[st.id] || 0} / 20</td> 
+            <td class="p-3 flex gap-2"> 
+              <button onclick="editarEstudiante('${st.id}')" class="text-cyan-400 hover:text-cyan-300"><i class="fa-solid fa-pen"></i></button> 
+              <button onclick="eliminarEstudiante('${st.id}')" class="text-rose-400 hover:text-rose-300"><i class="fa-solid fa-trash"></i></button> 
+            </td> 
+          </tr>`;
+      });
+    }
+
+    function renderTablaEntregas() {
+      const tbody = document.getElementById('tabla-entregas-body');
+      tbody.innerHTML = '';
+      if (!datosDocenteCache.entregas) return;
+
+      const entregasActivas = datosDocenteCache.entregas.filter(e => e.estado !== 'Pendiente');
+
+      entregasActivas.forEach(ent => {
+        const est = datosDocenteCache.estudiantes ? datosDocenteCache.estudiantes.find(e => e.id == ent.idEst) : null;
+        const act = datosDocenteCache.actividades ? datosDocenteCache.actividades.find(a => a.id == ent.idAct) : null;
+        const parsed = parseObs(ent.observaciones);
+
+        let enlaceHtml = parsed.enlace || ent.enlace || '#';
+        if(enlaceHtml.includes('http')) {
+          const urlMatch = enlaceHtml.match(/https?:\/\/[^\s|]+/);
+          if (urlMatch) {
+            enlaceHtml = `<a href="${urlMatch[0]}" target="_blank" class="text-cyan-400 hover:underline inline-flex items-center gap-1 bg-cyan-900/30 px-2 py-1 rounded"><i class="fa-solid fa-link"></i> Abrir Link</a>`;
+          }
+        }
+
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-900/80 border-b border-slate-800/50"> 
+            <td class="p-3 font-bold text-white">${est ? est.nombre : 'ID '+ent.idEst}</td> 
+            <td class="p-3 text-violet-300 text-[11px] uppercase">${act ? act.titulo : 'ID '+ent.idAct}</td> 
+            <td class="p-3 max-w-[150px]">${enlaceHtml}</td> 
+            <td class="p-3 text-[10px] uppercase font-bold text-slate-400">${ent.estado}</td> 
+            <td class="p-3 font-black text-emerald-400 text-lg">${ent.nota || '-'}</td> 
+            <td class="p-3"> 
+              <button onclick="abrirModalCalificar('${ent.idAct}', '${ent.idEst}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded text-[10px] uppercase font-bold shadow-lg transition-all"><i class="fa-solid fa-star"></i> Calificar</button> 
+            </td> 
+          </tr>`;
+      });
+    }
+
+    function abrirModalCalificar(idAct, idEst) {
+      const ent = datosDocenteCache.entregas ? datosDocenteCache.entregas.find(e => e.idAct == idAct && e.idEst == idEst) : null;
+      const act = datosDocenteCache.actividades ? datosDocenteCache.actividades.find(a => a.id == idAct) : null;
+      const est = datosDocenteCache.estudiantes ? datosDocenteCache.estudiantes.find(e => e.id == idEst) : null;
+
+      currentCalificacion = ent;
+
+      document.getElementById('calif-idAct').value = idAct;
+      document.getElementById('calif-idEst').value = idEst;
+      document.getElementById('calif-info-est').innerText = est ? est.nombre : idEst;
+      document.getElementById('calif-info-act').innerText = act ? act.titulo : idAct;
+
+      document.getElementById('calif-nota').value = ent ? ent.nota : '';
+      const parsed = parseObs(ent ? ent.observaciones : '');
+      document.getElementById('calif-obs').value = parsed.feedback;
+
+      document.getElementById('modal-calificar').classList.remove('hidden');
+    }
+
+    function cerrarModalCalificar() { document.getElementById('modal-calificar').classList.add('hidden'); }
+
+    async function guardarCalificacionModal() {
+      const idAct = document.getElementById('calif-idAct').value;
+      const idEst = document.getElementById('calif-idEst').value;
+      const nota = document.getElementById('calif-nota').value;
+      const feedback = document.getElementById('calif-obs').value;
+
+      const parsed = parseObs(currentCalificacion ? currentCalificacion.observaciones : '');
+      const observacionesFinales = (parsed.enlace || '') + " | Feedback: " + feedback;
+
+      cerrarModalCalificar();
+
+      await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'guardarCalificacion', idAct, idEst, nota, observaciones: observacionesFinales, estado: nota ? 'Calificado' : 'Entregado' })
+      });
+      cargarPanelDocente();
+    }
+
+    function renderTablaActividades() {
+      const tbody = document.getElementById('tabla-actividades-body');
+      tbody.innerHTML = '';
+      if (!datosDocenteCache.actividades) return;
+
+      datosDocenteCache.actividades.forEach(act => {
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-900/80 border-b border-slate-800/50"> 
+            <td class="p-3 text-[10px] text-violet-400 font-bold uppercase">${act.id}</td> 
+            <td class="p-3 font-bold text-white">${act.titulo}</td> 
+            <td class="p-3">${act.herramientas || '-'}</td> 
+            <td class="p-3">${act.fechaLimite || '-'}</td> 
+            <td class="p-3">${act.puntajeMaximo || act.puntajeMax || 20}</td> 
+            <td class="p-3 flex gap-2"> 
+              <button onclick="editarActividad('${act.id}')" class="text-cyan-400 hover:text-cyan-300"><i class="fa-solid fa-pen"></i></button> 
+              <button onclick="eliminarActividad('${act.id}')" class="text-rose-400 hover:text-rose-300"><i class="fa-solid fa-trash"></i></button> 
+            </td> 
+          </tr>`;
+      });
+    }
+
+    function abrirModalEstudiante(st = null) {
+      document.getElementById('est-edit-id').value = st ? st.id : '';
+      document.getElementById('est-edit-nombre').value = st ? st.nombre : '';
+      document.getElementById('est-edit-estado').value = st ? st.estadoGeneral : 'Activo';
+      document.getElementById('modal-estudiante').classList.remove('hidden');
+    }
+    function cerrarModalEstudiante() { document.getElementById('modal-estudiante').classList.add('hidden'); }
+    async function guardarEstudianteData() {
+      const id = document.getElementById('est-edit-id').value;
+      const nombre = document.getElementById('est-edit-nombre').value;
+      const estadoGeneral = document.getElementById('est-edit-estado').value;
+      await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'guardarEstudiante', id, nombre, estadoGeneral }) });
+      cerrarModalEstudiante(); cargarPanelDocente();
+    }
+    async function eliminarEstudiante(id) {
+      if (!confirm("¿Eliminar este estudiante?")) return;
+      await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'eliminarEstudiante', id }) });
+      cargarPanelDocente();
+    }
+    function editarEstudiante(id) { const st = datosDocenteCache.estudiantes.find(e => e.id == id); if (st) abrirModalEstudiante(st); }
+
+    function abrirModalActividad(act = null) {
+      document.getElementById('act-edit-idtxt').value = act ? act.id : '';
+      document.getElementById('act-edit-titulo').value = act ? act.titulo : '';
+      document.getElementById('act-edit-herramienta').value = act ? act.herramientas : '';
+      document.getElementById('act-edit-fecha').value = act ? act.fechaLimite : '';
+      document.getElementById('act-edit-pts').value = act ? (act.puntajeMaximo || act.puntajeMax) : '';
+      document.getElementById('modal-actividad').classList.remove('hidden');
+    }
+    function cerrarModalActividad() { document.getElementById('modal-actividad').classList.add('hidden'); }
+    async function guardarActividadData() {
+      const id = document.getElementById('act-edit-idtxt').value;
+      const titulo = document.getElementById('act-edit-titulo').value;
+      const herramientas = document.getElementById('act-edit-herramienta').value;
+      const fechaLimite = document.getElementById('act-edit-fecha').value;
+      const puntajeMaximo = document.getElementById('act-edit-pts').value;
+      await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'guardarActividad', id, titulo, herramientas, fechaLimite, puntajeMaximo }) });
+      cerrarModalActividad(); cargarPanelDocente();
+    }
+    async function eliminarActividad(id) {
+      if (!confirm("¿Eliminar esta actividad?")) return;
+      await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'eliminarActividad', id }) });
+      cargarPanelDocente();
+    }
+    function editarActividad(id) { const act = datosDocenteCache.actividades.find(a => a.id == id); if (act) abrirModalActividad(act); }
+
+    async function cargarEstudiantesSinPin() {
+      const selectSetup = document.getElementById('select-estudiante-setup');
+      try {
+        const res = await fetch(`${API_URL}?action=getAlumnosSinPin`);
+        const data = await res.json();
+        selectSetup.innerHTML = '<option value="">Selecciona tu nombre...</option>';
+        if (data.alumnos && data.alumnos.length > 0) {
+          data.alumnos.forEach(st => { selectSetup.innerHTML += `<option value="${st.id}">${st.nombre}</option>`; });
+          document.getElementById('view-login').classList.add('hidden');
+          document.getElementById('view-setup-pin').classList.remove('hidden');
+        } else {
+          alert("Todos los estudiantes ya han configurado su PIN personal.");
+        }
+      } catch (err) {
+        alert("Error al cargar la lista de estudiantes.");
+      }
+    }
+
+    async function guardarNuevoPin() {
+      const studentId = document.getElementById('select-estudiante-setup').value;
+      const newPin = document.getElementById('input-new-pin').value.trim();
+      const msg = document.getElementById('setup-msg');
+      if (!studentId || newPin.length !== 4) return;
+      if (newPin === PIN_GENERICO || newPin === PIN_DOCENTE) {
+        msg.textContent = "PIN no permitido. Elige otro.";
+        msg.className = "text-xs text-center text-rose-400 mt-2";
+        msg.classList.remove('hidden');
+        return;
+      }
+      try {
+        const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'setupPin', studentId, newPin }) });
+        const data = await res.json();
+        if (data.success) {
+          msg.textContent = "¡PIN guardado! Inicia sesión.";
+          msg.className = "text-xs text-center text-emerald-400 mt-2";
+          msg.classList.remove('hidden');
+          setTimeout(() => logout(), 1500);
+        }
+      } catch (err) {
+        msg.textContent = "Error al guardar PIN.";
+        msg.className = "text-xs text-center text-rose-400 mt-2";
+        msg.classList.remove('hidden');
+      }
+    }
+
+    function logout() {
+      currentStudent = null;
+      document.getElementById('input-pin').value = '';
+      ['view-dashboard', 'view-teacher', 'view-setup-pin'].forEach(id => document.getElementById(id).classList.add('hidden'));
+      document.getElementById('view-login').classList.remove('hidden');
+    }
+  </script>
+</body>
+</html>
