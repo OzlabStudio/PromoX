@@ -192,7 +192,7 @@
           <table class="w-full text-left text-xs text-slate-300">
             <thead class="bg-slate-900 uppercase text-slate-400">
               <tr>
-                <th class="p-3">Estudiante</th><th class="p-3">Actividad</th><th class="p-3">Enlace / Trabajo</th><th class="p-3">Estado</th><th class="p-3">Nota</th><th class="p-3">Acción</th>
+                <th class="p-3">Estudiante</th><th class="p-3">Actividad</th><th class="p-3">Enlace / Trabajo</th><th class="p-3">Fecha de Entrega</th><th class="p-3">Estado</th><th class="p-3">Nota</th><th class="p-3">Acción</th>
               </tr>
             </thead>
             <tbody id="tabla-entregas-body" class="divide-y divide-slate-800"></tbody>
@@ -328,6 +328,28 @@
       };
     }
 
+    // Función global para formatear fechas a dd/mm/aaaa y hh:mm am/pm separados
+    function formatearFechaHora(fechaStr) {
+      if (!fechaStr) return { fecha: '-', hora: '-' };
+      const date = new Date(fechaStr);
+      if (isNaN(date.getTime())) return { fecha: fechaStr, hora: '' };
+
+      const dia = String(date.getDate()).padStart(2, '0');
+      const mes = String(date.getMonth() + 1).padStart(2, '0');
+      const anio = date.getFullYear();
+
+      let horas = date.getHours();
+      const minutos = String(date.getMinutes()).padStart(2, '0');
+      const ampm = horas >= 12 ? 'p.m.' : 'a.m.';
+      horas = horas % 12;
+      horas = horas ? horas : 12;
+
+      return {
+        fecha: `${dia}/${mes}/${anio}`,
+        hora: `${horas}:${minutos} ${ampm}`
+      };
+    }
+
     // ================= LÓGICA DE INGRESO =================
     async function loginEstudiante() {
       const pin = document.getElementById('input-pin').value.trim();
@@ -368,7 +390,7 @@
           data.historial.forEach(h => {
             if(h.nota && !isNaN(h.nota)) totalNota += parseFloat(h.nota);
           });
-          document.getElementById('student-score').innerText = `${totalNota} / 20 pts`;
+          document.getElementById('student-score').innerText = `${totalNota.toFixed(1)} / 20 pts`;
           
           document.getElementById('view-login').classList.add('hidden');
           document.getElementById('view-dashboard').classList.remove('hidden');
@@ -478,7 +500,7 @@
 
           let totalNota = 0;
           reloadData.historial.forEach(h => { if(h.nota && !isNaN(h.nota)) totalNota += parseFloat(h.nota); });
-          document.getElementById('student-score').innerText = `${totalNota} / 20 pts`;
+          document.getElementById('student-score').innerText = `${totalNota.toFixed(1)} / 20 pts`;
           renderFichasEstudiante(reloadData.historial);
         } else {
           throw new Error(data.message);
@@ -501,29 +523,9 @@
         return;
       }
 
-      function formatearFecha(fechaStr) {
-        if (!fechaStr) return '-';
-        const date = new Date(fechaStr);
-        if (isNaN(date.getTime())) return fechaStr;
-
-        const dia = String(date.getDate()).padStart(2, '0');
-        const mes = String(date.getMonth() + 1).padStart(2, '0');
-        const anio = date.getFullYear();
-
-        let horas = date.getHours();
-        const minutos = String(date.getMinutes()).padStart(2, '0');
-        const ampm = horas >= 12 ? 'p.m.' : 'a.m.';
-        horas = horas % 12;
-        horas = horas ? horas : 12;
-
-        return `${dia}/${mes}/${anio} - ${horas}:${minutos} ${ampm}`;
-      }
-
       historial.forEach(act => {
-        const isEntregado = act.estado === "Entregado" || act.estado === "Calificado";
-        const parsed = parseObs(act.observaciones);
-        
-        const fechaFormateada = formatearFecha(act.fechaLimite);
+        const isCalificado = act.estado === "Calificado";
+        const fh = formatearFechaHora(act.fechaEntrega || act.fechaLimite);
         const notaMostrar = (act.nota !== undefined && act.nota !== "" && !isNaN(act.nota)) ? act.nota : '-';
 
         container.innerHTML += `
@@ -533,11 +535,17 @@
                 <span class="text-[10px] text-violet-400 font-bold uppercase">${act.idAct || ''} ${act.herramientas ? '• ' + act.herramientas : ''}</span> 
                 <h4 class="text-sm font-bold text-white">${act.titulo || act.actividad || 'Actividad'}</h4> 
               </div> 
-              <span class="text-[10px] px-2 py-0.5 rounded-full border ${isEntregado ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border-amber-500/30'}">${act.estado}</span> 
+              <span class="text-[10px] px-2 py-0.5 rounded-full border ${isCalificado ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border-amber-500/30'}">${act.estado}</span> 
             </div> 
-            <div class="flex justify-between items-center text-xs text-slate-400 border-t border-slate-800/50 pt-2 mt-2"> 
-              <span>Límite: ${fechaFormateada}</span> 
-              <span>Nota: <strong class="text-cyan-400">${notaMostrar} / ${act.puntajeMaximo || act.puntajeMax || '20'}</strong></span> 
+            <div class="text-xs text-slate-400 space-y-1 border-t border-slate-800/50 pt-2 mt-2">
+              <div class="flex justify-between">
+                <span>Fecha: <strong class="text-slate-200">${fh.fecha}</strong></span>
+                <span>Hora: <strong class="text-slate-200">${fh.hora}</strong></span>
+              </div>
+              <div class="flex justify-between pt-1">
+                <span>Nota:</span>
+                <strong class="text-cyan-400 text-sm">${notaMostrar} / ${act.puntajeMaximo || act.puntajeMax || '20'} pts</strong>
+              </div>
             </div> 
             ${act.feedback ? `<div class="text-[11px] bg-emerald-900/20 p-2.5 rounded-lg border border-emerald-800/50 text-emerald-200"><strong class="uppercase tracking-wider">Feedback Docente:</strong> ${act.feedback}</div>` : ''} 
           </div>`;
@@ -608,7 +616,7 @@
             <td class="p-3">${st.id}</td> 
             <td class="p-3 font-bold text-white">${st.nombre}</td> 
             <td class="p-3">${st.estadoGeneral || 'Activo'}</td> 
-            <td class="p-3 text-emerald-400 font-bold">${studentScores[st.id] || 0} / 20</td> 
+            <td class="p-3 text-emerald-400 font-bold">${(studentScores[st.id] || 0).toFixed(1)} / 20</td> 
             <td class="p-3 flex gap-2"> 
               <button onclick="editarEstudiante('${st.id}')" class="text-cyan-400 hover:text-cyan-300"><i class="fa-solid fa-pen"></i></button> 
               <button onclick="eliminarEstudiante('${st.id}')" class="text-rose-400 hover:text-rose-300"><i class="fa-solid fa-trash"></i></button> 
@@ -627,6 +635,7 @@
       entregasActivas.forEach(ent => {
         const est = datosDocenteCache.estudiantes ? datosDocenteCache.estudiantes.find(e => e.id == ent.idEst) : null;
         const act = datosDocenteCache.actividades ? datosDocenteCache.actividades.find(a => a.id == ent.idAct) : null;
+        const fh = formatearFechaHora(ent.fechaEntrega);
 
         let enlaceHtml = ent.enlace || '#';
         if(enlaceHtml.includes('http')) {
@@ -641,8 +650,12 @@
             <td class="p-3 font-bold text-white">${est ? est.nombre : 'ID '+ent.idEst}</td> 
             <td class="p-3 text-violet-300 text-[11px] uppercase">${act ? act.titulo : 'ID '+ent.idAct}</td> 
             <td class="p-3 max-w-[150px]">${enlaceHtml}</td> 
+            <td class="p-3 text-slate-300 text-[11px]">
+              <div>${fh.fecha}</div>
+              <div class="text-slate-500">${fh.hora}</div>
+            </td>
             <td class="p-3 text-[10px] uppercase font-bold text-slate-400">${ent.estado}</td> 
-            <td class="p-3 font-black text-emerald-400 text-lg">${ent.nota || '-'}</td> 
+            <td class="p-3 font-black text-emerald-400 text-lg">${ent.nota !== undefined && ent.nota !== "" ? ent.nota : '-'}</td> 
             <td class="p-3"> 
               <button onclick="abrirModalCalificar('${ent.idAct}', '${ent.idEst}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded text-[10px] uppercase font-bold shadow-lg transition-all"><i class="fa-solid fa-star"></i> Calificar</button> 
             </td> 
