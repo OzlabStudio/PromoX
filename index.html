@@ -392,28 +392,32 @@
 
     // ================= FUNCIONES DE ESTUDIANTE =================
     async function fetchActividadesCarga() {
-      const select = document.getElementById('select-actividad-carga');
-      select.innerHTML = '<option value="">Cargando actividades...</option>';
+  const select = document.getElementById('select-actividad-carga');
+  select.innerHTML = '<option value="">Cargando actividades...</option>';
 
-      try {
-        const res = await fetch(`${API_URL}?action=getActividades`);
-        const actividades = await res.json();
+  try {
+    const res = await fetch(`${API_URL}?action=getActividades`);
+    const actividades = await res.json();
 
-        select.innerHTML = '<option value="">Selecciona la actividad...</option>';
+    select.innerHTML = '<option value="">Selecciona la actividad...</option>';
 
-        if (!actividades || actividades.length === 0) {
-          select.innerHTML = '<option value="">No hay actividades disponibles</option>';
-          return;
-        }
-
-        actividades.forEach(act => {
-          const pts = act.puntajeMaximo || act.puntajeMax || 0;
-          select.innerHTML += `<option value="${act.id}">${act.titulo} (${act.herramientas || 'General'}) - Max: ${pts} pts</option>`;
-        });
-      } catch (err) {
-        select.innerHTML = '<option value="">Error al cargar actividades</option>';
-      }
+    if (!actividades || actividades.length === 0) {
+      select.innerHTML = '<option value="">No hay actividades disponibles</option>';
+      return;
     }
+
+    actividades.forEach(act => {
+      // Aquí agregamos las variantes exactas con las que el script lee las columnas de Google Sheets
+      const pts = act.puntajeMaximo || act.puntajeMax || act["Puntaje Maximo"] || 0;
+      const tituloAct = act.titulo || act.Título || act["Título de Actividad"] || "Actividad";
+      const herramientaAct = act.herramientas || act.Herramientas || act.Herramienta || 'General';
+
+      select.innerHTML += `<option value="${act.id}">${tituloAct} (${herramientaAct}) - Max: ${pts} pts</option>`;
+    });
+  } catch (err) {
+    select.innerHTML = '<option value="">Error al cargar actividades</option>';
+  }
+}
 
     function populateParejasDropdown() {
       const selectPareja = document.getElementById('select-pareja');
