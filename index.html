@@ -319,16 +319,6 @@
     let studentScores = {};
     let currentCalificacion = null;
 
-    function parseObs(obsText) {
-      if (!obsText) return { enlace: "", feedback: "" };
-      let parts = obsText.split("| Feedback:");
-      return {
-        enlace: parts[0].trim(),
-        feedback: parts.length > 1 ? parts[1].trim() : ""
-      };
-    }
-
-    // Función para formatear fecha y hora separados
     function formatearFechaHora(fechaStr) {
       if (!fechaStr) return { fecha: '-', hora: '-' };
       const date = new Date(fechaStr);
@@ -350,7 +340,6 @@
       };
     }
 
-    // ================= LÓGICA DE INGRESO =================
     async function loginEstudiante() {
       const pin = document.getElementById('input-pin').value.trim();
       const errorMsg = document.getElementById('login-error');
@@ -388,7 +377,9 @@
           
           let totalNota = 0;
           data.historial.forEach(h => {
-            if(h.nota !== undefined && h.nota !== "" && !isNaN(h.nota)) totalNota += parseFloat(h.nota);
+            if(h.nota !== undefined && h.nota !== "" && h.nota !== null && !isNaN(h.nota)) {
+              totalNota += parseFloat(h.nota);
+            }
           });
           document.getElementById('student-score').innerText = `${totalNota.toFixed(1)} / 20 pts`;
           
@@ -412,7 +403,6 @@
       }
     }
 
-    // ================= FUNCIONES DE ESTUDIANTE =================
     async function fetchActividadesCarga() {
       const select = document.getElementById('select-actividad-carga');
       select.innerHTML = '<option value="">Cargando actividades...</option>';
@@ -496,7 +486,11 @@
           const reloadData = await reloadRes.json();
 
           let totalNota = 0;
-          reloadData.historial.forEach(h => { if(h.nota !== undefined && h.nota !== "" && !isNaN(h.nota)) totalNota += parseFloat(h.nota); });
+          reloadData.historial.forEach(h => { 
+            if(h.nota !== undefined && h.nota !== "" && h.nota !== null && !isNaN(h.nota)) {
+              totalNota += parseFloat(h.nota);
+            } 
+          });
           document.getElementById('student-score').innerText = `${totalNota.toFixed(1)} / 20 pts`;
           renderFichasEstudiante(reloadData.historial);
         } else {
@@ -512,7 +506,7 @@
       }
     }
 
-  function renderFichasEstudiante(historial) {
+    function renderFichasEstudiante(historial) {
       const container = document.getElementById('fichas-actividades');
       container.innerHTML = '';
       if (!historial || historial.length === 0) {
@@ -523,10 +517,7 @@
       historial.forEach(act => {
         const isCalificado = act.estado === "Calificado" || (act.nota !== undefined && act.nota !== "" && act.nota !== null);
         const fh = formatearFechaHora(act.fechaEntrega);
-        
-        // Mapeo seguro de la nota desde diferentes posibles nombres de la propiedad
-        const valorNota = act.nota !== undefined && act.nota !== "" && act.nota !== null ? act.nota : 
-                          (act.calificacion !== undefined ? act.calificacion : '-');
+        const notaMostrar = (act.nota !== undefined && act.nota !== "" && act.nota !== null && !isNaN(act.nota)) ? act.nota : '-';
 
         container.innerHTML += `
           <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 space-y-3 shadow-lg"> 
@@ -544,7 +535,7 @@
               </div>
               <div class="flex justify-between pt-1">
                 <span>Nota:</span>
-                <strong class="text-cyan-400 text-sm">${valorNota} / ${act.puntajeMaximo || '20'} pts</strong>
+                <strong class="text-cyan-400 text-sm">${notaMostrar} / ${act.puntajeMaximo || '20'} pts</strong>
               </div>
             </div> 
             ${act.feedback ? `<div class="text-[11px] bg-emerald-900/20 p-2.5 rounded-lg border border-emerald-800/50 text-emerald-200"><strong class="uppercase tracking-wider">Feedback Docente:</strong> ${act.feedback}</div>` : ''} 
@@ -552,27 +543,67 @@
       });
     }
 
-    // ================= FUNCIONES DE DOCENTE =================
     async function cargarPanelDocente() {
       try {
         const res = await fetch(`${API_URL}?action=getDatosDocente`);
         const data = await res.json();
+        
         if (data && data.success) {
           datosDocenteCache = data;
           calcularMetricasDocente();
           renderTablaEstudiantes();
           renderTablaEntregas();
           renderTablaActividades();
+        } else {
+          console.error("El servidor no devolvió éxito:", data);
         }
       } catch (err) {
-        console.error("Error al cargar panel docente", err);
+        console.error("Error de conexión en panel docente:", err);
       }
+    }
+
+    function calcularMetricasDocente() {
+      studentScores = {};
+      let totalSum = 0;
+      let estudiantesActivos = 0;
+
+      if (!datosDocenteCache || !datosDocenteCache.estudiantes) return;
+
+      datosDocenteCache.estudiantes.forEach(st => {
+        studentScores[st.id] = 0;
+        if(st.estadoGeneral !== "Inactivo") estudiantesActivos++;
+      });
+
+      if (datosDocenteCache.entregas) {
+        datosDocenteCache.entregas.forEach(ent => {
+          if(ent.nota !== undefined && ent.nota !== "" && ent.nota !== null && !isNaN(ent.nota)) {
+            if(studentScores[ent.idEst] !== undefined) {
+              studentScores[ent.idEst] += parseFloat(ent.nota);
+              totalSum += parseFloat(ent.nota);
+            }
+          }
+        });
+      }
+
+      const avg = estudiantesActivos > 0 ? (totalSum / estudiantesActivos).toFixed(1) : 0;
+      document.getElementById('teacher-avg').innerText = `${avg} / 20 pts`;
+    }
+
+    function switchTabDocente(tab) {
+      document.getElementById('docente-estudiantes').classList.toggle('hidden', tab !== 'estudiantes');
+      document.getElementById('docente-entregas').classList.toggle('hidden', tab !== 'entregas');
+      document.getElementById('docente-actividades').classList.toggle('hidden', tab !== 'actividades');
+
+      document.getElementById('tab-btn-estudiantes').className = tab === 'estudiantes' ? "px-4 py-2 text-xs font-bold rounded-lg bg-violet-600 text-white whitespace-nowrap" : "px-4 py-2 text-xs font-bold rounded-lg bg-slate-800 text-slate-400 whitespace-nowrap";
+      document.getElementById('tab-btn-entregas').className = tab === 'entregas' ? "px-4 py-2 text-xs font-bold rounded-lg bg-violet-600 text-white whitespace-nowrap" : "px-4 py-2 text-xs font-bold rounded-lg bg-slate-800 text-slate-400 whitespace-nowrap";
+      document.getElementById('tab-btn-actividades').className = tab === 'actividades' ? "px-4 py-2 text-xs font-bold rounded-lg bg-violet-600 text-white whitespace-nowrap" : "px-4 py-2 text-xs font-bold rounded-lg bg-slate-800 text-slate-400 whitespace-nowrap";
     }
 
     function renderTablaEstudiantes() {
       const tbody = document.getElementById('tabla-estudiantes-body');
       tbody.innerHTML = '';
-      const lista = datosDocenteCache.estudiantes || [];
+      const lista = datosDocenteCache && datosDocenteCache.estudiantes ? datosDocenteCache.estudiantes : [];
+      
       if (lista.length === 0) {
         tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-500">No hay estudiantes registrados.</td></tr>`;
         return;
@@ -593,37 +624,17 @@
       });
     }
 
-    function renderTablaActividades() {
-      const tbody = document.getElementById('tabla-actividades-body');
-      tbody.innerHTML = '';
-      const lista = datosDocenteCache.actividades || [];
-      if (lista.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-500">No hay actividades registradas.</td></tr>`;
-        return;
-      }
-
-      lista.forEach(act => {
-        tbody.innerHTML += `
-          <tr class="hover:bg-slate-900/80 border-b border-slate-800/50"> 
-            <td class="p-3 text-[10px] text-violet-400 font-bold uppercase">${act.id}</td> 
-            <td class="p-3 font-bold text-white">${act.titulo}</td> 
-            <td class="p-3">${act.herramientas || '-'}</td> 
-            <td class="p-3">${act.fechaLimite || '-'}</td> 
-            <td class="p-3">${act.puntajeMaximo || 20}</td> 
-            <td class="p-3 flex gap-2"> 
-              <button onclick="editarActividad('${act.id}')" class="text-cyan-400 hover:text-cyan-300"><i class="fa-solid fa-pen"></i></button> 
-              <button onclick="eliminarActividad('${act.id}')" class="text-rose-400 hover:text-rose-300"><i class="fa-solid fa-trash"></i></button> 
-            </td> 
-          </tr>`;
-      });
-    }
-
     function renderTablaEntregas() {
       const tbody = document.getElementById('tabla-entregas-body');
       tbody.innerHTML = '';
-      if (!datosDocenteCache.entregas) return;
+      const listaEntregas = datosDocenteCache && datosDocenteCache.entregas ? datosDocenteCache.entregas : [];
+      
+      const entregasActivas = listaEntregas.filter(e => e.enlace);
 
-      const entregasActivas = datosDocenteCache.entregas.filter(e => e.enlace);
+      if (entregasActivas.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-500">No hay entregas recibidas aún.</td></tr>`;
+        return;
+      }
 
       entregasActivas.forEach(ent => {
         const est = datosDocenteCache.estudiantes ? datosDocenteCache.estudiantes.find(e => String(e.id) === String(ent.idEst)) : null;
@@ -651,6 +662,32 @@
             <td class="p-3 font-black text-emerald-400 text-lg">${ent.nota !== undefined && ent.nota !== "" && ent.nota !== null ? ent.nota : '-'}</td> 
             <td class="p-3"> 
               <button onclick="abrirModalCalificar('${ent.idAct}', '${ent.idEst}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded text-[10px] uppercase font-bold shadow-lg transition-all"><i class="fa-solid fa-star"></i> Calificar</button> 
+            </td> 
+          </tr>`;
+      });
+    }
+
+    function renderTablaActividades() {
+      const tbody = document.getElementById('tabla-actividades-body');
+      tbody.innerHTML = '';
+      const lista = datosDocenteCache && datosDocenteCache.actividades ? datosDocenteCache.actividades : [];
+      
+      if (lista.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-500">No hay actividades registradas.</td></tr>`;
+        return;
+      }
+
+      lista.forEach(act => {
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-900/80 border-b border-slate-800/50"> 
+            <td class="p-3 text-[10px] text-violet-400 font-bold uppercase">${act.id}</td> 
+            <td class="p-3 font-bold text-white">${act.titulo}</td> 
+            <td class="p-3">${act.herramientas || '-'}</td> 
+            <td class="p-3">${act.fechaLimite || '-'}</td> 
+            <td class="p-3">${act.puntajeMaximo || 20}</td> 
+            <td class="p-3 flex gap-2"> 
+              <button onclick="editarActividad('${act.id}')" class="text-cyan-400 hover:text-cyan-300"><i class="fa-solid fa-pen"></i></button> 
+              <button onclick="eliminarActividad('${act.id}')" class="text-rose-400 hover:text-rose-300"><i class="fa-solid fa-trash"></i></button> 
             </td> 
           </tr>`;
       });
@@ -689,27 +726,6 @@
         body: JSON.stringify({ action: 'guardarCalificacion', idAct, idEst, nota, feedback })
       });
       cargarPanelDocente();
-    }
-
-    function renderTablaActividades() {
-      const tbody = document.getElementById('tabla-actividades-body');
-      tbody.innerHTML = '';
-      if (!datosDocenteCache.actividades) return;
-
-      datosDocenteCache.actividades.forEach(act => {
-        tbody.innerHTML += `
-          <tr class="hover:bg-slate-900/80 border-b border-slate-800/50"> 
-            <td class="p-3 text-[10px] text-violet-400 font-bold uppercase">${act.id}</td> 
-            <td class="p-3 font-bold text-white">${act.titulo}</td> 
-            <td class="p-3">${act.herramientas || '-'}</td> 
-            <td class="p-3">${act.fechaLimite || '-'}</td> 
-            <td class="p-3">${act.puntajeMaximo || 20}</td> 
-            <td class="p-3 flex gap-2"> 
-              <button onclick="editarActividad('${act.id}')" class="text-cyan-400 hover:text-cyan-300"><i class="fa-solid fa-pen"></i></button> 
-              <button onclick="eliminarActividad('${act.id}')" class="text-rose-400 hover:text-rose-300"><i class="fa-solid fa-trash"></i></button> 
-            </td> 
-          </tr>`;
-      });
     }
 
     function abrirModalEstudiante(st = null) {
