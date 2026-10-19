@@ -556,8 +556,9 @@
     async function cargarPanelDocente() {
       try {
         const res = await fetch(`${API_URL}?action=getDatosDocente`);
-        datosDocenteCache = await res.json();
-        if (datosDocenteCache && datosDocenteCache.success) {
+        const data = await res.json();
+        if (data && data.success) {
+          datosDocenteCache = data;
           calcularMetricasDocente();
           renderTablaEstudiantes();
           renderTablaEntregas();
@@ -568,49 +569,16 @@
       }
     }
 
-    function calcularMetricasDocente() {
-      studentScores = {};
-      let totalSum = 0;
-      let estudiantesActivos = 0;
-
-      if (!datosDocenteCache.estudiantes) return;
-
-      datosDocenteCache.estudiantes.forEach(st => {
-        studentScores[st.id] = 0;
-        if(st.estadoGeneral !== "Inactivo") estudiantesActivos++;
-      });
-
-      if (datosDocenteCache.entregas) {
-        datosDocenteCache.entregas.forEach(ent => {
-          if(ent.nota !== undefined && ent.nota !== "" && !isNaN(ent.nota)) {
-            if(studentScores[ent.idEst] !== undefined) {
-              studentScores[ent.idEst] += parseFloat(ent.nota);
-              totalSum += parseFloat(ent.nota);
-            }
-          }
-        });
-      }
-
-      const avg = estudiantesActivos > 0 ? (totalSum / estudiantesActivos).toFixed(1) : 0;
-      document.getElementById('teacher-avg').innerText = `${avg} / 20 pts`;
-    }
-
-    function switchTabDocente(tab) {
-      document.getElementById('docente-estudiantes').classList.toggle('hidden', tab !== 'estudiantes');
-      document.getElementById('docente-entregas').classList.toggle('hidden', tab !== 'entregas');
-      document.getElementById('docente-actividades').classList.toggle('hidden', tab !== 'actividades');
-
-      document.getElementById('tab-btn-estudiantes').className = tab === 'estudiantes' ? "px-4 py-2 text-xs font-bold rounded-lg bg-violet-600 text-white whitespace-nowrap" : "px-4 py-2 text-xs font-bold rounded-lg bg-slate-800 text-slate-400 whitespace-nowrap";
-      document.getElementById('tab-btn-entregas').className = tab === 'entregas' ? "px-4 py-2 text-xs font-bold rounded-lg bg-violet-600 text-white whitespace-nowrap" : "px-4 py-2 text-xs font-bold rounded-lg bg-slate-800 text-slate-400 whitespace-nowrap";
-      document.getElementById('tab-btn-actividades').className = tab === 'actividades' ? "px-4 py-2 text-xs font-bold rounded-lg bg-violet-600 text-white whitespace-nowrap" : "px-4 py-2 text-xs font-bold rounded-lg bg-slate-800 text-slate-400 whitespace-nowrap";
-    }
-
     function renderTablaEstudiantes() {
       const tbody = document.getElementById('tabla-estudiantes-body');
       tbody.innerHTML = '';
-      if (!datosDocenteCache.estudiantes) return;
+      const lista = datosDocenteCache.estudiantes || [];
+      if (lista.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-500">No hay estudiantes registrados.</td></tr>`;
+        return;
+      }
 
-      datosDocenteCache.estudiantes.forEach(st => {
+      lista.forEach(st => {
         tbody.innerHTML += `
           <tr class="hover:bg-slate-900/80 border-b border-slate-800/50"> 
             <td class="p-3">${st.id}</td> 
@@ -620,6 +588,31 @@
             <td class="p-3 flex gap-2"> 
               <button onclick="editarEstudiante('${st.id}')" class="text-cyan-400 hover:text-cyan-300"><i class="fa-solid fa-pen"></i></button> 
               <button onclick="eliminarEstudiante('${st.id}')" class="text-rose-400 hover:text-rose-300"><i class="fa-solid fa-trash"></i></button> 
+            </td> 
+          </tr>`;
+      });
+    }
+
+    function renderTablaActividades() {
+      const tbody = document.getElementById('tabla-actividades-body');
+      tbody.innerHTML = '';
+      const lista = datosDocenteCache.actividades || [];
+      if (lista.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-500">No hay actividades registradas.</td></tr>`;
+        return;
+      }
+
+      lista.forEach(act => {
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-900/80 border-b border-slate-800/50"> 
+            <td class="p-3 text-[10px] text-violet-400 font-bold uppercase">${act.id}</td> 
+            <td class="p-3 font-bold text-white">${act.titulo}</td> 
+            <td class="p-3">${act.herramientas || '-'}</td> 
+            <td class="p-3">${act.fechaLimite || '-'}</td> 
+            <td class="p-3">${act.puntajeMaximo || 20}</td> 
+            <td class="p-3 flex gap-2"> 
+              <button onclick="editarActividad('${act.id}')" class="text-cyan-400 hover:text-cyan-300"><i class="fa-solid fa-pen"></i></button> 
+              <button onclick="eliminarActividad('${act.id}')" class="text-rose-400 hover:text-rose-300"><i class="fa-solid fa-trash"></i></button> 
             </td> 
           </tr>`;
       });
