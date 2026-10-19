@@ -512,7 +512,7 @@
       }
     }
 
-    function renderFichasEstudiante(historial) {
+  function renderFichasEstudiante(historial) {
       const container = document.getElementById('fichas-actividades');
       container.innerHTML = '';
       if (!historial || historial.length === 0) {
@@ -521,9 +521,12 @@
       }
 
       historial.forEach(act => {
-        const isCalificado = act.estado === "Calificado";
+        const isCalificado = act.estado === "Calificado" || (act.nota !== undefined && act.nota !== "" && act.nota !== null);
         const fh = formatearFechaHora(act.fechaEntrega);
-        const notaMostrar = (act.nota !== undefined && act.nota !== "" && act.nota !== null && !isNaN(act.nota)) ? act.nota : '-';
+        
+        // Mapeo seguro de la nota desde diferentes posibles nombres de la propiedad
+        const valorNota = act.nota !== undefined && act.nota !== "" && act.nota !== null ? act.nota : 
+                          (act.calificacion !== undefined ? act.calificacion : '-');
 
         container.innerHTML += `
           <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 space-y-3 shadow-lg"> 
@@ -532,7 +535,7 @@
                 <span class="text-[10px] text-violet-400 font-bold uppercase">${act.idAct || ''} ${act.herramientas ? '• ' + act.herramientas : ''}</span> 
                 <h4 class="text-sm font-bold text-white">${act.titulo || 'Actividad'}</h4> 
               </div> 
-              <span class="text-[10px] px-2 py-0.5 rounded-full border ${isCalificado ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border-amber-500/30'}">${act.estado}</span> 
+              <span class="text-[10px] px-2 py-0.5 rounded-full border ${isCalificado ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border-amber-500/30'}">${isCalificado ? 'Calificado' : act.estado}</span> 
             </div> 
             <div class="text-xs text-slate-400 space-y-1 border-t border-slate-800/50 pt-2 mt-2">
               <div class="flex justify-between">
@@ -541,7 +544,7 @@
               </div>
               <div class="flex justify-between pt-1">
                 <span>Nota:</span>
-                <strong class="text-cyan-400 text-sm">${notaMostrar} / ${act.puntajeMaximo || '20'} pts</strong>
+                <strong class="text-cyan-400 text-sm">${valorNota} / ${act.puntajeMaximo || '20'} pts</strong>
               </div>
             </div> 
             ${act.feedback ? `<div class="text-[11px] bg-emerald-900/20 p-2.5 rounded-lg border border-emerald-800/50 text-emerald-200"><strong class="uppercase tracking-wider">Feedback Docente:</strong> ${act.feedback}</div>` : ''} 
