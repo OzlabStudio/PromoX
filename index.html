@@ -377,9 +377,8 @@
           
           let totalNota = 0;
           data.historial.forEach(h => {
-            if(h.nota !== undefined && h.nota !== "" && h.nota !== null && !isNaN(h.nota)) {
-              totalNota += parseFloat(h.nota);
-            }
+            const val = parseFloat(h.nota);
+            if(!isNaN(val)) totalNota += val;
           });
           document.getElementById('student-score').innerText = `${totalNota.toFixed(1)} / 20 pts`;
           
@@ -487,9 +486,8 @@
 
           let totalNota = 0;
           reloadData.historial.forEach(h => { 
-            if(h.nota !== undefined && h.nota !== "" && h.nota !== null && !isNaN(h.nota)) {
-              totalNota += parseFloat(h.nota);
-            } 
+            const val = parseFloat(h.nota);
+            if(!isNaN(val)) totalNota += val;
           });
           document.getElementById('student-score').innerText = `${totalNota.toFixed(1)} / 20 pts`;
           renderFichasEstudiante(reloadData.historial);
@@ -515,9 +513,10 @@
       }
 
       historial.forEach(act => {
-        const isCalificado = act.estado === "Calificado" || (act.nota !== undefined && act.nota !== "" && act.nota !== null);
+        const hasNota = act.nota !== undefined && act.nota !== null && act.nota !== "" && !isNaN(parseFloat(act.nota));
+        const isCalificado = act.estado === "Calificado" || hasNota;
         const fh = formatearFechaHora(act.fechaEntrega);
-        const notaMostrar = (act.nota !== undefined && act.nota !== "" && act.nota !== null && !isNaN(act.nota)) ? act.nota : '-';
+        const notaMostrar = hasNota ? parseFloat(act.nota).toFixed(1) : '-';
 
         container.innerHTML += `
           <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 space-y-3 shadow-lg"> 
@@ -576,10 +575,11 @@
 
       if (datosDocenteCache.entregas) {
         datosDocenteCache.entregas.forEach(ent => {
-          if(ent.nota !== undefined && ent.nota !== "" && ent.nota !== null && !isNaN(ent.nota)) {
+          const val = parseFloat(ent.nota);
+          if(!isNaN(val)) {
             if(studentScores[ent.idEst] !== undefined) {
-              studentScores[ent.idEst] += parseFloat(ent.nota);
-              totalSum += parseFloat(ent.nota);
+              studentScores[ent.idEst] += val;
+              totalSum += val;
             }
           }
         });
@@ -641,6 +641,9 @@
         const act = datosDocenteCache.actividades ? datosDocenteCache.actividades.find(a => String(a.id) === String(ent.idAct)) : null;
         const fh = formatearFechaHora(ent.fechaEntrega);
 
+        const hasNota = ent.nota !== undefined && ent.nota !== null && ent.nota !== "" && !isNaN(parseFloat(ent.nota));
+        const notaMostrar = hasNota ? parseFloat(ent.nota).toFixed(1) : '-';
+
         let enlaceHtml = ent.enlace || '#';
         if(enlaceHtml.includes('http')) {
           const urlMatch = enlaceHtml.match(/https?:\/\/[^\s|]+/);
@@ -659,7 +662,7 @@
               <div class="text-slate-500">${fh.hora}</div>
             </td>
             <td class="p-3 text-[10px] uppercase font-bold text-slate-400">${ent.estado}</td> 
-            <td class="p-3 font-black text-emerald-400 text-lg">${ent.nota !== undefined && ent.nota !== "" && ent.nota !== null ? ent.nota : '-'}</td> 
+            <td class="p-3 font-black text-emerald-400 text-lg">${notaMostrar}</td> 
             <td class="p-3"> 
               <button onclick="abrirModalCalificar('${ent.idAct}', '${ent.idEst}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded text-[10px] uppercase font-bold shadow-lg transition-all"><i class="fa-solid fa-star"></i> Calificar</button> 
             </td> 
