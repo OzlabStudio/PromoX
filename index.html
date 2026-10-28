@@ -83,18 +83,30 @@
         </div>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- ZONA DE CARGA (COLUMNA IZQUIERDA) -->
-        <div class="lg:col-span-1 bg-slate-900/60 p-5 rounded-xl border border-slate-800 space-y-4 h-fit">
+      <div class="space-y-6">
+        <!-- HISTORIAL DE FICHAS (ARRIBA) -->
+        <div class="space-y-4">
+          <div class="flex justify-between items-center pb-2 border-b border-slate-800">
+            <h3 class="text-sm font-bold text-violet-400 uppercase tracking-wider flex items-center gap-2">
+              <i class="fa-solid fa-list-check"></i> Historial de Actividades
+            </h3>
+            <button onclick="logout()" class="text-rose-400 text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 transition-colors">Cerrar Sesión</button>
+          </div>
+          <div id="fichas-actividades" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        </div>
+
+        <!-- ZONA DE CARGA (DEBAJO DE LAS ACTIVIDADES) -->
+        <div class="bg-slate-900/60 p-5 rounded-xl border border-slate-800 space-y-4">
           <h3 class="text-sm font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-2">
-            <i class="fa-solid fa-cloud-arrow-up"></i> Cargar Entregable
+            <i class="fa-solid fa-cloud-arrow-up"></i> Cargar Entregable (Actividad en Curso)
           </h3>
           <form id="form-entrega" onsubmit="event.preventDefault(); enviarEntregaNueva();" class="space-y-4">
-            <div>
-              <label class="block text-xs font-medium text-slate-300 mb-1">Actividad a Entregar</label>
-              <select id="select-actividad-carga" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-slate-200">
-                <option value="">Cargando...</option>
-              </select>
+            <div class="p-3 bg-slate-950 rounded-lg border border-slate-800 flex justify-between items-center">
+              <div>
+                <span class="text-[10px] text-slate-400 uppercase block">Actividad Vigente</span>
+                <span id="label-actividad-curso" class="text-xs font-bold text-cyan-400">Cargando actividad...</span>
+              </div>
+              <input type="hidden" id="input-actividad-curso-id">
             </div>
             
             <div>
@@ -125,17 +137,6 @@
             </button>
           </form>
           <p id="entrega-msg" class="text-xs text-center font-medium mt-2 hidden"></p>
-        </div>
-
-        <!-- HISTORIAL DE FICHAS (COLUMNA DERECHA) -->
-        <div class="lg:col-span-2 space-y-4">
-          <div class="flex justify-between items-center pb-2 border-b border-slate-800">
-            <h3 class="text-sm font-bold text-violet-400 uppercase tracking-wider flex items-center gap-2">
-              <i class="fa-solid fa-list-check"></i> Historial de Actividades
-            </h3>
-            <button onclick="logout()" class="text-rose-400 text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 transition-colors">Cerrar Sesión</button>
-          </div>
-          <div id="fichas-actividades" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
         </div>
       </div>
     </section>
@@ -186,13 +187,13 @@
       <!-- SECCIÓN: ENTREGAS RECIBIDAS -->
       <div id="docente-entregas" class="space-y-4 hidden">
         <div class="flex justify-between items-center">
-          <h3 class="text-sm font-bold text-emerald-400"><i class="fa-solid fa-inbox"></i> Trabajos por Calificar</h3>
+          <h3 class="text-sm font-bold text-emerald-400"><i class="fa-solid fa-inbox"></i> Trabajos Pendientes por Calificar</h3>
         </div>
         <div class="overflow-x-auto bg-slate-900/40 rounded-xl border border-slate-800">
           <table class="w-full text-left text-xs text-slate-300">
             <thead class="bg-slate-900 uppercase text-slate-400">
               <tr>
-                <th class="p-3">Estudiante</th><th class="p-3">Actividad</th><th class="p-3">Enlace / Trabajo</th><th class="p-3">Fecha de Entrega</th><th class="p-3">Estado</th><th class="p-3">Nota</th><th class="p-3">Acción</th>
+                <th class="p-3">Estudiante</th><th class="p-3">Actividad</th><th class="p-3">Enlace / Trabajo</th><th class="p-3">Fecha de Entrega</th><th class="p-3">Estado</th><th class="p-3">Acción</th>
               </tr>
             </thead>
             <tbody id="tabla-entregas-body" class="divide-y divide-slate-800"></tbody>
@@ -247,6 +248,29 @@
       <div class="flex justify-end gap-2 pt-4">
         <button onclick="cerrarModalCalificar()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg text-xs transition-colors">Cancelar</button>
         <button onclick="guardarCalificacionModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-xs font-bold transition-colors">Guardar Calificación</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL PERFIL DEL ESTUDIANTE (SOLO DOCENTE) -->
+  <div id="modal-perfil-estudiante" class="fixed inset-0 bg-black/80 flex items-center justify-center hidden p-4 z-50">
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 w-full max-w-2xl space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <div>
+          <span class="text-[10px] text-cyan-400 uppercase font-bold">Perfil Detallado del Alumno</span>
+          <h3 id="perfil-est-nombre" class="text-base font-bold text-white">Nombre del Estudiante</h3>
+        </div>
+        <button onclick="cerrarModalPerfilEstudiante()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <div class="flex justify-between bg-slate-950 p-3 rounded-lg border border-slate-800">
+        <span class="text-xs text-slate-400">Puntaje Total Acumulado:</span>
+        <span id="perfil-est-puntaje" class="text-xs font-black text-emerald-400">0 / 20 pts</span>
+      </div>
+      <div class="space-y-3" id="perfil-est-entregas-list">
+        <!-- Historial detallado de entregas del alumno -->
+      </div>
+      <div class="flex justify-end pt-2">
+        <button onclick="cerrarModalPerfilEstudiante()" class="bg-slate-800 text-slate-300 px-4 py-2 rounded-lg text-xs">Cerrar</button>
       </div>
     </div>
   </div>
@@ -340,11 +364,9 @@
       };
     }
 
-    // Validador estricto de notas para ignorar el año de la fecha u otros textos
     function parseNota(val) {
       if (val === undefined || val === null || val === "") return null;
       const str = String(val).trim();
-      // Si el valor contiene 2026 o formato de fecha de año, no es una nota válida
       if (str.includes("2026") || str.includes("T")) return null;
       const num = parseFloat(str);
       return isNaN(num) ? null : num;
@@ -398,7 +420,7 @@
           
           renderFichasEstudiante(data.historial);
           populateParejasDropdown();
-          await fetchActividadesCarga();
+          await fetchActividadEnCurso();
         } else {
           errorMsg.textContent = data.message || "PIN incorrecto. Verifica e intenta de nuevo.";
           errorMsg.classList.remove('hidden');
@@ -412,27 +434,31 @@
       }
     }
 
-    async function fetchActividadesCarga() {
-      const select = document.getElementById('select-actividad-carga');
-      select.innerHTML = '<option value="">Cargando actividades...</option>';
+    async function fetchActividadEnCurso() {
+      const labelCurso = document.getElementById('label-actividad-curso');
+      const inputIdCurso = document.getElementById('input-actividad-curso-id');
+      labelCurso.innerText = "Cargando actividad en curso...";
 
       try {
         const res = await fetch(`${API_URL}?action=getActividades`);
         const actividades = await res.json();
 
-        select.innerHTML = '<option value="">Selecciona la actividad...</option>';
-
         if (!actividades || actividades.length === 0) {
-          select.innerHTML = '<option value="">No hay actividades disponibles</option>';
+          labelCurso.innerText = "No hay actividades disponibles";
           return;
         }
 
-        actividades.forEach(act => {
-          const pts = act.puntajeMaximo || act.puntajeMax || 20;
-          select.innerHTML += `<option value="${act.id}">${act.titulo} (${act.herramientas || 'General'}) - Max: ${pts} pts</option>`;
-        });
+        // Selecciona la primera actividad activa o la más reciente
+        const actActual = actividades.filter(a => a.visible !== false && a.visible !== "OCULTO")[0] || actividades[0];
+        
+        if (actActual) {
+          labelCurso.innerText = `${actActual.titulo} (${actActual.herramientas || 'General'}) - Max: ${actActual.puntajeMaximo || 20} pts`;
+          inputIdCurso.value = actActual.id;
+        } else {
+          labelCurso.innerText = "No hay actividades vigentes";
+        }
       } catch (err) {
-        select.innerHTML = '<option value="">Error al cargar actividades</option>';
+        labelCurso.innerText = "Error al cargar la actividad actual";
       }
     }
 
@@ -456,7 +482,7 @@
     async function enviarEntregaNueva() {
       const btn = document.getElementById('btn-enviar-carga');
       const msg = document.getElementById('entrega-msg');
-      const idAct = document.getElementById('select-actividad-carga').value;
+      const idAct = document.getElementById('input-actividad-curso-id').value;
       const modalidad = document.getElementById('select-modalidad').value;
       const alumno2 = modalidad === 'pareja' ? document.getElementById('select-pareja').value : "";
       const enlace = document.getElementById('input-enlace-carga').value.trim();
@@ -489,6 +515,7 @@
           msg.className = "text-xs text-center font-medium mt-2 text-emerald-400";
           document.getElementById('form-entrega').reset();
           toggleParejaSelect();
+          await fetchActividadEnCurso();
 
           const pin = document.getElementById('input-pin').value.trim();
           const reloadRes = await fetch(`${API_URL}?action=loginAlumno&pin=${pin}`);
@@ -528,6 +555,11 @@
         const fh = formatearFechaHora(act.fechaEntrega);
         const notaMostrar = valNota !== null ? valNota.toFixed(1) : '-';
 
+        let parejaInfo = '';
+        if (act.alumno2Nombre) {
+          parejaInfo = `<div class="text-[11px] text-cyan-300"><i class="fa-solid fa-user-group"></i> En pareja con: <strong class="text-white">${act.alumno2Nombre}</strong></div>`;
+        }
+
         container.innerHTML += `
           <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 space-y-3 shadow-lg"> 
             <div class="flex justify-between items-start"> 
@@ -537,6 +569,7 @@
               </div> 
               <span class="text-[10px] px-2 py-0.5 rounded-full border ${isCalificado ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border-amber-500/30'}">${isCalificado ? 'Calificado' : act.estado}</span> 
             </div> 
+            ${parejaInfo}
             <div class="text-xs text-slate-400 space-y-1 border-t border-slate-800/50 pt-2 mt-2">
               <div class="flex justify-between">
                 <span>Fecha: <strong class="text-slate-200">${fh.fecha}</strong></span>
@@ -627,6 +660,7 @@
             <td class="p-3">${st.estadoGeneral || 'Activo'}</td> 
             <td class="p-3 text-emerald-400 font-bold">${(studentScores[st.id] || 0).toFixed(1)} / 20</td> 
             <td class="p-3 flex gap-2"> 
+              <button onclick="verPerfilEstudianteDocente('${st.id}')" title="Ver Perfil Detallado" class="text-violet-400 hover:text-violet-300"><i class="fa-solid fa-id-card"></i></button>
               <button onclick="editarEstudiante('${st.id}')" class="text-cyan-400 hover:text-cyan-300"><i class="fa-solid fa-pen"></i></button> 
               <button onclick="eliminarEstudiante('${st.id}')" class="text-rose-400 hover:text-rose-300"><i class="fa-solid fa-trash"></i></button> 
             </td> 
@@ -639,20 +673,27 @@
       tbody.innerHTML = '';
       const listaEntregas = datosDocenteCache && datosDocenteCache.entregas ? datosDocenteCache.entregas : [];
       
-      const entregasActivas = listaEntregas.filter(e => e.enlace);
+      // Filtrar entregas que NO tengan nota asignada (pendientes)
+      const entregasPendientes = listaEntregas.filter(e => {
+        const val = parseNota(e.nota);
+        return e.enlace && val === null;
+      });
 
-      if (entregasActivas.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-500">No hay entregas recibidas aún.</td></tr>`;
+      if (entregasPendientes.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-500">No hay entregas pendientes por calificar.</td></tr>`;
         return;
       }
 
-      entregasActivas.forEach(ent => {
+      entregasPendientes.forEach(ent => {
         const est = datosDocenteCache.estudiantes ? datosDocenteCache.estudiantes.find(e => String(e.id) === String(ent.idEst)) : null;
         const act = datosDocenteCache.actividades ? datosDocenteCache.actividades.find(a => String(a.id) === String(ent.idAct)) : null;
         const fh = formatearFechaHora(ent.fechaEntrega);
 
-        const valNota = parseNota(ent.nota);
-        const notaMostrar = valNota !== null ? valNota.toFixed(1) : '-';
+        let estudianteNombre = est ? est.nombre : 'ID '+ent.idEst;
+        if (ent.idEst2) {
+          const est2 = datosDocenteCache.estudiantes ? datosDocenteCache.estudiantes.find(e => String(e.id) === String(ent.idEst2)) : null;
+          if (est2) estudianteNombre += ` & <span class="text-violet-400">${est2.nombre}</span>`;
+        }
 
         let enlaceHtml = ent.enlace || '#';
         if(enlaceHtml.includes('http')) {
@@ -664,15 +705,14 @@
 
         tbody.innerHTML += `
           <tr class="hover:bg-slate-900/80 border-b border-slate-800/50"> 
-            <td class="p-3 font-bold text-white">${est ? est.nombre : 'ID '+ent.idEst}</td> 
+            <td class="p-3 font-bold text-white">${estudianteNombre}</td> 
             <td class="p-3 text-violet-300 text-[11px] uppercase">${act ? act.titulo : 'ID '+ent.idAct}</td> 
             <td class="p-3 max-w-[150px]">${enlaceHtml}</td> 
             <td class="p-3 text-slate-300 text-[11px]">
               <div>${fh.fecha}</div>
               <div class="text-slate-500">${fh.hora}</div>
             </td>
-            <td class="p-3 text-[10px] uppercase font-bold text-slate-400">${ent.estado}</td> 
-            <td class="p-3 font-black text-emerald-400 text-lg">${notaMostrar}</td> 
+            <td class="p-3 text-[10px] uppercase font-bold text-amber-400">Pendiente</td> 
             <td class="p-3"> 
               <button onclick="abrirModalCalificar('${ent.idAct}', '${ent.idEst}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded text-[10px] uppercase font-bold shadow-lg transition-all"><i class="fa-solid fa-star"></i> Calificar</button> 
             </td> 
@@ -685,12 +725,14 @@
       tbody.innerHTML = '';
       const lista = datosDocenteCache && datosDocenteCache.actividades ? datosDocenteCache.actividades : [];
       
-      if (lista.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-500">No hay actividades registradas.</td></tr>`;
+      const activas = lista.filter(act => act.visible !== "OCULTO");
+
+      if (activas.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-500">No hay actividades activas.</td></tr>`;
         return;
       }
 
-      lista.forEach(act => {
+      activas.forEach(act => {
         tbody.innerHTML += `
           <tr class="hover:bg-slate-900/80 border-b border-slate-800/50"> 
             <td class="p-3 text-[10px] text-violet-400 font-bold uppercase">${act.id}</td> 
@@ -699,11 +741,60 @@
             <td class="p-3">${act.fechaLimite || '-'}</td> 
             <td class="p-3">${act.puntajeMaximo || 20}</td> 
             <td class="p-3 flex gap-2"> 
-              <button onclick="editarActividad('${act.id}')" class="text-cyan-400 hover:text-cyan-300"><i class="fa-solid fa-pen"></i></button> 
-              <button onclick="eliminarActividad('${act.id}')" class="text-rose-400 hover:text-rose-300"><i class="fa-solid fa-trash"></i></button> 
+              <button onclick="editarActividad('${act.id}')" class="text-cyan-400 hover:text-cyan-300" title="Editar"><i class="fa-solid fa-pen"></i></button> 
+              <button onclick="ocultarActividad('${act.id}')" class="text-amber-400 hover:text-amber-300" title="Ocultar de la lista"><i class="fa-solid fa-eye-slash"></i></button>
             </td> 
           </tr>`;
       });
+    }
+
+    function verPerfilEstudianteDocente(idEst) {
+      const est = datosDocenteCache.estudiantes.find(e => String(e.id) === String(idEst));
+      if (!est) return;
+
+      document.getElementById('perfil-est-nombre').innerText = est.nombre;
+      document.getElementById('perfil-est-puntaje').innerText = `${(studentScores[est.id] || 0).toFixed(1)} / 20 pts`;
+      
+      const container = document.getElementById('perfil-est-entregas-list');
+      container.innerHTML = '';
+
+      const entregasAlumno = datosDocenteCache.entregas ? datosDocenteCache.entregas.filter(e => String(e.idEst) === String(idEst)) : [];
+
+      if (entregasAlumno.length === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-500 text-center py-4">Este estudiante no tiene entregas registradas.</p>`;
+      } else {
+        entregasAlumno.forEach(ent => {
+          const act = datosDocenteCache.actividades ? datosDocenteCache.actividades.find(a => String(a.id) === String(ent.idAct)) : null;
+          const valNota = parseNota(ent.nota);
+          const isCalificado = valNota !== null;
+          const fh = formatearFechaHora(ent.fechaEntrega);
+
+          container.innerHTML += `
+            <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 space-y-2">
+              <div class="flex justify-between items-center">
+                <span class="text-xs font-bold text-violet-400">${act ? act.titulo : ent.idAct}</span>
+                <span class="text-[10px] px-2 py-0.5 rounded-full ${isCalificado ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}">${isCalificado ? 'Calificado: ' + valNota.toFixed(1) + ' pts' : 'Pendiente'}</span>
+              </div>
+              <div class="text-[11px] text-slate-400 flex justify-between">
+                <span>Fecha: ${fh.fecha} ${fh.hora}</span>
+                <a href="${ent.enlace}" target="_blank" class="text-cyan-400 hover:underline"><i class="fa-solid fa-link"></i> Ver enlace</a>
+              </div>
+              ${ent.feedback ? `<div class="text-[10px] bg-slate-900 p-2 rounded text-emerald-300"><strong>Feedback:</strong> ${ent.feedback}</div>` : ''}
+            </div>`;
+        });
+      }
+
+      document.getElementById('modal-perfil-estudiante').classList.remove('hidden');
+    }
+
+    function cerrarModalPerfilEstudiante() {
+      document.getElementById('modal-perfil-estudiante').classList.add('hidden');
+    }
+
+    async function ocultarActividad(id) {
+      if (!confirm("¿Deseas ocultar esta actividad de la lista del estudiante sin borrarla de los registros?")) return;
+      await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'ocultarActividad', id }) });
+      cargarPanelDocente();
     }
 
     function abrirModalCalificar(idAct, idEst) {
@@ -780,11 +871,6 @@
       const puntajeMaximo = document.getElementById('act-edit-pts').value;
       await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'guardarActividad', id, titulo, herramientas, fechaLimite, puntajeMaximo }) });
       cerrarModalActividad(); cargarPanelDocente();
-    }
-    async function eliminarActividad(id) {
-      if (!confirm("¿Eliminar esta actividad?")) return;
-      await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'eliminarActividad', id }) });
-      cargarPanelDocente();
     }
     function editarActividad(id) { const act = datosDocenteCache.actividades.find(a => a.id == id); if (act) abrirModalActividad(act); }
 
