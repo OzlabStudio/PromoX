@@ -523,7 +523,7 @@
       }
     }
 
-   function renderFichasEstudiante(historial) {
+  function renderFichasEstudiante(historial) {
       const container = document.getElementById('fichas-actividades');
       container.innerHTML = '';
       if (!historial || historial.length === 0) {
@@ -532,11 +532,11 @@
       }
 
       historial.forEach(ent => {
-        // Cruzar con la caché de actividades para asegurar el título y herramientas correctos
+        // Cruzar de forma segura el ID de la actividad con la caché global cargada
         const actInfo = actividadesCache.find(a => String(a.id).trim() === String(ent.idAct).trim()) || {};
         
         const tituloActividad = actInfo.titulo || ent.titulo || ent.idAct || 'Actividad';
-        const herramientaActividad = actInfo.herramientas || ent.herramientas || '';
+        const herramientasActividad = actInfo.herramientas || ent.herramientas || '';
         const maxPts = actInfo.puntajeMaximo || ent.puntajeMaximo || 20;
 
         const valNota = parseNota(ent.nota);
@@ -573,7 +573,6 @@
           </div>`;
       });
     }
-
     async function cargarPanelDocente() {
       try {
         const res = await fetch(`${API_URL}?action=getDatosDocente`);
