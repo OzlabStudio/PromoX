@@ -434,40 +434,30 @@
       }
     }
 
-   async function fetchActividadEnCurso() {
-      const labelCurso = document.getElementById('label-actividad-curso');
-      const inputIdCurso = document.getElementById('input-actividad-curso-id');
-      labelCurso.innerText = "Buscando actividad vigente...";
+  async function fetchActividadEnCurso() {
+      const selectActividad = document.getElementById('select-actividad-curso');
+      selectActividad.innerHTML = '<option value="">Cargando actividades...</option>';
 
       try {
         const res = await fetch(`${API_URL}?action=getActividades`);
         const actividades = await res.json();
 
         if (!actividades || actividades.length === 0) {
-          labelCurso.innerText = "No hay actividades disponibles";
+          selectActividad.innerHTML = '<option value="">No hay actividades disponibles</option>';
           return;
         }
 
-        // Buscamos primero la que tenga estado 'Activo' (insensible a mayúsculas)
-        let actActual = actividades.find(a => 
-          a.estado && a.estado.toLowerCase() === 'activo' && a.visible !== "OCULTO"
-        );
-
-        // Si no hay ninguna explícitamente en 'Activo', tomamos la última visible de la lista
-        if (!actActual) {
-          const visibles = actividades.filter(a => a.visible !== "OCULTO");
-          actActual = visibles.length > 0 ? visibles[visibles.length - 1] : actividades[0];
-        }
+        // Filtramos únicamente las que no estén ocultas por el docente
+        const visibles = actividades.filter(a => a.visible !== "OCULTO");
         
-        if (actActual) {
-          labelCurso.innerText = `${actActual.titulo} (${actActual.herramientas || 'General'}) - Max: ${actActual.puntajeMaximo || 20} pts`;
-          inputIdCurso.value = actActual.id;
-        } else {
-          labelCurso.innerText = "No hay actividades vigentes";
-          inputIdCurso.value = "";
-        }
+        selectActividad.innerHTML = '<option value="">Selecciona la actividad a entregar...</option>';
+        
+        visibles.forEach(act => {
+          selectActividad.innerHTML += `<option value="${act.id}">${act.titulo} (${act.herramientas || 'General'} - Max: ${act.puntajeMaximo || 20} pts)</option>`;
+        });
+
       } catch (err) {
-        labelCurso.innerText = "Error al cargar la actividad actual";
+        selectActividad.innerHTML = '<option value="">Error al cargar actividades</option>';
       }
     }
 
