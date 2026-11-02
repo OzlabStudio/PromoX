@@ -433,7 +433,23 @@
         btnLogin.innerHTML = `<span>Ingresar</span><i class="fa-solid fa-arrow-right"></i>`;
       }
     }
-
+// Función para renderizar la actividad vigente en el portal del estudiante
+function cargarActividadVigente(actividades) {
+    // Buscar la actividad que tenga el estado activo
+    const actividadActual = actividades.find(act => act.estado === 'Activo');
+    
+    const contenedor = document.getElementById('seccion-actividad-vigente');
+    
+    if (actividadActual) {
+        contenedor.innerHTML = `
+            <h3>ACTIVIDAD VIGENTE</h3>
+            <p><strong>${actividadActual.nombre}</strong> - Max: ${actividadActual.puntos} pts</p>
+            <p>Modalidad de Entrega: ${actividadActual.modalidad}</p>
+        `;
+    } else {
+        contenedor.innerHTML = `<p>No hay actividades activas en este momento.</p>`;
+    }
+}
     async function fetchActividadEnCurso() {
       const labelCurso = document.getElementById('label-actividad-curso');
       const inputIdCurso = document.getElementById('input-actividad-curso-id');
