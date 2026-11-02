@@ -523,7 +523,7 @@
       }
     }
 
-    function renderFichasEstudiante(historial) {
+   function renderFichasEstudiante(historial) {
       const container = document.getElementById('fichas-actividades');
       container.innerHTML = '';
       if (!historial || historial.length === 0) {
@@ -531,25 +531,32 @@
         return;
       }
 
-      historial.forEach(act => {
-        const valNota = parseNota(act.nota);
-        const isCalificado = act.estado === "Calificado" || valNota !== null;
-        const fh = formatearFechaHora(act.fechaEntrega);
+      historial.forEach(ent => {
+        // Cruzar con la caché de actividades para asegurar el título y herramientas correctos
+        const actInfo = actividadesCache.find(a => String(a.id).trim() === String(ent.idAct).trim()) || {};
+        
+        const tituloActividad = actInfo.titulo || ent.titulo || ent.idAct || 'Actividad';
+        const herramientaActividad = actInfo.herramientas || ent.herramientas || '';
+        const maxPts = actInfo.puntajeMaximo || ent.puntajeMaximo || 20;
+
+        const valNota = parseNota(ent.nota);
+        const isCalificado = ent.estado === "Calificado" || valNota !== null;
+        const fh = formatearFechaHora(ent.fechaEntrega);
         const notaMostrar = valNota !== null ? valNota.toFixed(1) : '-';
 
         let parejaInfo = '';
-        if (act.alumno2Nombre) {
-          parejaInfo = `<div class="text-[11px] text-cyan-300"><i class="fa-solid fa-user-group"></i> En pareja con: <strong class="text-white">${act.alumno2Nombre}</strong></div>`;
+        if (ent.alumno2Nombre) {
+          parejaInfo = `<div class="text-[11px] text-cyan-300"><i class="fa-solid fa-user-group"></i> En pareja con: <strong class="text-white">${ent.alumno2Nombre}</strong></div>`;
         }
 
         container.innerHTML += `
           <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 space-y-3 shadow-lg"> 
             <div class="flex justify-between items-start"> 
               <div> 
-                <span class="text-[10px] text-violet-400 font-bold uppercase">${act.idAct || ''} ${act.herramientas ? '• ' + act.herramientas : ''}</span> 
-                <h4 class="text-sm font-bold text-white">${act.titulo || 'Actividad'}</h4> 
+                <span class="text-[10px] text-violet-400 font-bold uppercase">${ent.idAct || ''} ${herramientasActividad ? '• ' + herramientasActividad : ''}</span> 
+                <h4 class="text-sm font-bold text-white">${tituloActividad}</h4> 
               </div> 
-              <span class="text-[10px] px-2 py-0.5 rounded-full border ${isCalificado ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border-amber-500/30'}">${isCalificado ? 'Calificado' : act.estado}</span> 
+              <span class="text-[10px] px-2 py-0.5 rounded-full border ${isCalificado ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border-amber-500/30'}">${isCalificado ? 'Calificado' : (ent.estado || 'Entregado')}</span> 
             </div> 
             ${parejaInfo}
             <div class="text-xs text-slate-400 space-y-1 border-t border-slate-800/50 pt-2 mt-2">
@@ -559,10 +566,10 @@
               </div>
               <div class="flex justify-between pt-1">
                 <span>Nota:</span>
-                <strong class="text-cyan-400 text-sm">${notaMostrar} / ${act.puntajeMaximo || 20} pts</strong>
+                <strong class="text-cyan-400 text-sm">${notaMostrar} / ${maxPts} pts</strong>
               </div>
             </div> 
-            ${act.feedback ? `<div class="text-[11px] bg-emerald-900/20 p-2.5 rounded-lg border border-emerald-800/50 text-emerald-200"><strong class="uppercase tracking-wider">Feedback Docente:</strong> ${act.feedback}</div>` : ''} 
+            ${ent.feedback ? `<div class="text-[11px] bg-emerald-900/20 p-2.5 rounded-lg border border-emerald-800/50 text-emerald-200"><strong class="uppercase tracking-wider">Feedback Docente:</strong> ${ent.feedback}</div>` : ''} 
           </div>`;
       });
     }
