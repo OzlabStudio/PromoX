@@ -433,27 +433,11 @@
         btnLogin.innerHTML = `<span>Ingresar</span><i class="fa-solid fa-arrow-right"></i>`;
       }
     }
-// Función para renderizar la actividad vigente en el portal del estudiante
-function cargarActividadVigente(actividades) {
-    // Buscar la actividad que tenga el estado activo
-    const actividadActual = actividades.find(act => act.estado === 'Activo');
-    
-    const contenedor = document.getElementById('seccion-actividad-vigente');
-    
-    if (actividadActual) {
-        contenedor.innerHTML = `
-            <h3>ACTIVIDAD VIGENTE</h3>
-            <p><strong>${actividadActual.nombre}</strong> - Max: ${actividadActual.puntos} pts</p>
-            <p>Modalidad de Entrega: ${actividadActual.modalidad}</p>
-        `;
-    } else {
-        contenedor.innerHTML = `<p>No hay actividades activas en este momento.</p>`;
-    }
-}
+
     async function fetchActividadEnCurso() {
       const labelCurso = document.getElementById('label-actividad-curso');
       const inputIdCurso = document.getElementById('input-actividad-curso-id');
-      labelCurso.innerText = "Cargando actividad en curso...";
+      labelCurso.innerText = "Buscando actividad vigente...";
 
       try {
         const res = await fetch(`${API_URL}?action=getActividades`);
@@ -464,14 +448,17 @@ function cargarActividadVigente(actividades) {
           return;
         }
 
-        // Selecciona la primera actividad activa o la más reciente
-        const actActual = actividades.filter(a => a.visible !== false && a.visible !== "OCULTO")[0] || actividades[0];
+        // Filtro estricto buscando la actividad con estado 'Activo'
+        const actActual = actividades.find(a => 
+          a.estado && a.estado.trim().toLowerCase() === 'activo' && a.visible !== "OCULTO"
+        ) || actividades.find(a => a.visible !== "OCULTO") || actividades[0];
         
         if (actActual) {
           labelCurso.innerText = `${actActual.titulo} (${actActual.herramientas || 'General'}) - Max: ${actActual.puntajeMaximo || 20} pts`;
           inputIdCurso.value = actActual.id;
         } else {
           labelCurso.innerText = "No hay actividades vigentes";
+          inputIdCurso.value = "";
         }
       } catch (err) {
         labelCurso.innerText = "Error al cargar la actividad actual";
@@ -689,7 +676,6 @@ function cargarActividadVigente(actividades) {
       tbody.innerHTML = '';
       const listaEntregas = datosDocenteCache && datosDocenteCache.entregas ? datosDocenteCache.entregas : [];
       
-      // Filtrar entregas que NO tengan nota asignada (pendientes)
       const entregasPendientes = listaEntregas.filter(e => {
         const val = parseNota(e.nota);
         return e.enlace && val === null;
@@ -749,10 +735,15 @@ function cargarActividadVigente(actividades) {
       }
 
       activas.forEach(act => {
+        const esActivo = act.estado && act.estado.trim().toLowerCase() === 'activo';
+        const badgeEstado = esActivo 
+          ? `<span class="px-2 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold">Activo</span>` 
+          : `<span class="px-2 py-0.5 rounded text-[10px] bg-slate-800 text-slate-400">Inactivo</span>`;
+
         tbody.innerHTML += `
           <tr class="hover:bg-slate-900/80 border-b border-slate-800/50"> 
             <td class="p-3 text-[10px] text-violet-400 font-bold uppercase">${act.id}</td> 
-            <td class="p-3 font-bold text-white">${act.titulo}</td> 
+            <td class="p-3 font-bold text-white">${act.titulo} <div class="mt-1">${badgeEstado}</div></td> 
             <td class="p-3">${act.herramientas || '-'}</td> 
             <td class="p-3">${act.fechaLimite || '-'}</td> 
             <td class="p-3">${act.puntajeMaximo || 20}</td> 
