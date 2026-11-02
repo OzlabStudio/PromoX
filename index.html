@@ -434,7 +434,7 @@
       }
     }
 
-    async function fetchActividadEnCurso() {
+   async function fetchActividadEnCurso() {
       const labelCurso = document.getElementById('label-actividad-curso');
       const inputIdCurso = document.getElementById('input-actividad-curso-id');
       labelCurso.innerText = "Buscando actividad vigente...";
@@ -448,10 +448,16 @@
           return;
         }
 
-        // Filtro estricto buscando la actividad con estado 'Activo'
-        const actActual = actividades.find(a => 
-          a.estado && a.estado.trim().toLowerCase() === 'activo' && a.visible !== "OCULTO"
-        ) || actividades.find(a => a.visible !== "OCULTO") || actividades[0];
+        // Buscamos primero la que tenga estado 'Activo' (insensible a mayúsculas)
+        let actActual = actividades.find(a => 
+          a.estado && a.estado.toLowerCase() === 'activo' && a.visible !== "OCULTO"
+        );
+
+        // Si no hay ninguna explícitamente en 'Activo', tomamos la última visible de la lista
+        if (!actActual) {
+          const visibles = actividades.filter(a => a.visible !== "OCULTO");
+          actActual = visibles.length > 0 ? visibles[visibles.length - 1] : actividades[0];
+        }
         
         if (actActual) {
           labelCurso.innerText = `${actActual.titulo} (${actActual.herramientas || 'General'}) - Max: ${actActual.puntajeMaximo || 20} pts`;
