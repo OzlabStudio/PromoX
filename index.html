@@ -78,8 +78,8 @@
           <h2 id="student-name" class="text-xl md:text-2xl font-bold text-cyan-400">Cargando...</h2>
         </div>
         <div class="text-right">
-          <span class="text-xs text-slate-400 uppercase tracking-wider font-bold">Calificación Total</span>
-          <h2 id="student-score" class="text-xl md:text-2xl font-black text-emerald-400">0 / 20 pts</h2>
+          <span class="text-xs text-slate-400 uppercase tracking-wider font-bold">Calificación Acumulada</span>
+          <h2 id="student-score" class="text-xl md:text-2xl font-black text-emerald-400">0 pts</h2>
         </div>
       </div>
 
@@ -152,8 +152,8 @@
         </div>
         <div class="flex items-center gap-4">
           <div class="text-right px-4 border-r border-slate-700">
-            <span class="text-xs text-slate-400 uppercase font-bold">Promedio del Grupo</span>
-            <h2 id="teacher-avg" class="text-xl md:text-2xl font-black text-amber-400">0 / 20 pts</h2>
+            <span class="text-xs text-slate-400 uppercase font-bold">Promedio Acumulado Grupo</span>
+            <h2 id="teacher-avg" class="text-xl md:text-2xl font-black text-amber-400">0 pts</h2>
           </div>
           <button onclick="logout()" class="text-rose-400 text-xs font-semibold px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition-colors">Salir</button>
         </div>
@@ -176,7 +176,7 @@
           <table class="w-full text-left text-xs text-slate-300">
             <thead class="bg-slate-900 uppercase text-slate-400">
               <tr>
-                <th class="p-3">ID</th><th class="p-3">Nombre</th><th class="p-3">Estado</th><th class="p-3 text-emerald-400">Nota Total</th><th class="p-3">Acciones</th>
+                <th class="p-3">ID</th><th class="p-3">Nombre</th><th class="p-3">Estado</th><th class="p-3 text-emerald-400">Total Acumulado</th><th class="p-3">Acciones</th>
               </tr>
             </thead>
             <tbody id="tabla-estudiantes-body" class="divide-y divide-slate-800"></tbody>
@@ -238,7 +238,7 @@
       <div class="grid grid-cols-3 gap-4">
         <div class="col-span-1">
           <label class="block text-xs text-slate-300 mb-1">Nota Asignada</label>
-          <input type="number" id="calif-nota" class="w-full bg-slate-950 border border-emerald-700/50 rounded-lg p-2 text-sm text-emerald-400 font-bold focus:outline-none" step="0.1">
+          <input type="number" id="calif-nota" class="w-full bg-slate-950 border border-emerald-700/50 rounded-lg p-2 text-sm text-emerald-400 font-bold focus:outline-none" step="0.5">
         </div>
         <div class="col-span-2">
           <label class="block text-xs text-slate-300 mb-1">Feedback Privado</label>
@@ -264,11 +264,9 @@
       </div>
       <div class="flex justify-between bg-slate-950 p-3 rounded-lg border border-slate-800">
         <span class="text-xs text-slate-400">Puntaje Total Acumulado:</span>
-        <span id="perfil-est-puntaje" class="text-xs font-black text-emerald-400">0 / 20 pts</span>
+        <span id="perfil-est-puntaje" class="text-xs font-black text-emerald-400">0 pts</span>
       </div>
-      <div class="space-y-3" id="perfil-est-entregas-list">
-        <!-- Historial detallado de entregas del alumno -->
-      </div>
+      <div class="space-y-3" id="perfil-est-entregas-list"></div>
       <div class="flex justify-end pt-2">
         <button onclick="cerrarModalPerfilEstudiante()" class="bg-slate-800 text-slate-300 px-4 py-2 rounded-lg text-xs">Cerrar</button>
       </div>
@@ -369,7 +367,7 @@
       if (val === undefined || val === null || val === "") return null;
       const str = String(val).trim();
       if (str.includes("2026") || str.includes("T")) return null;
-      const num = parseFloat(str);
+      const num = parseFloat(str.replace(',', '.'));
       return isNaN(num) ? null : num;
     }
 
@@ -414,7 +412,7 @@
             const val = parseNota(h.nota);
             if(val !== null) totalNota += val;
           });
-          document.getElementById('student-score').innerText = `${totalNota.toFixed(1)} / 20 pts`;
+          document.getElementById('student-score').innerText = `${totalNota.toFixed(1)} pts`;
           
           document.getElementById('view-login').classList.add('hidden');
           document.getElementById('view-dashboard').classList.remove('hidden');
@@ -462,10 +460,10 @@
           return;
         }
 
-        const actActual = actividades.filter(a => a.visible !== "OCULTO")[0] || actividades[0];
+        const actActual = actividades.filter(a => String(a.visible).trim() !== "OCULTO" && String(a.visible).trim() !== "FALSE")[0] || actividades[0];
         
         if (actActual) {
-          labelCurso.innerText = `${actActual.titulo} (${actActual.herramientas || 'General'}) - Max: ${actActual.puntajeMaximo || 20} pts`;
+          labelCurso.innerText = `${actActual.id}: ${actActual.titulo} (${actActual.herramientas || 'General'}) - Max: ${actActual.puntajeMaximo || 3} pts`;
           inputIdCurso.value = actActual.id;
         } else {
           labelCurso.innerText = "No hay actividades vigentes";
@@ -480,7 +478,7 @@
       selectPareja.innerHTML = '<option value="">Selecciona un compañero/a...</option>';
 
       allStudents.forEach(st => {
-        if (st.id !== currentStudent.id) {
+        if (String(st.id) !== String(currentStudent.id)) {
           selectPareja.innerHTML += `<option value="${st.id}">${st.nombre}</option>`;
         }
       });
@@ -540,7 +538,7 @@
             const val = parseNota(h.nota);
             if(val !== null) totalNota += val;
           });
-          document.getElementById('student-score').innerText = `${totalNota.toFixed(1)} / 20 pts`;
+          document.getElementById('student-score').innerText = `${totalNota.toFixed(1)} pts`;
           renderFichasEstudiante(reloadData.historial);
         } else {
           throw new Error(data.message);
@@ -564,12 +562,11 @@
       }
 
       historial.forEach(ent => {
-        // Cruzar de forma segura el ID de la entrega con la caché global de actividades
         const actInfo = actividadesGlobalCache.find(a => String(a.id).trim() === String(ent.idAct).trim()) || {};
         
         const tituloAct = actInfo.titulo || ent.titulo || ent.idAct || 'Actividad';
         const herramientaAct = actInfo.herramientas || ent.herramientas || '';
-        const maxPts = actInfo.puntajeMaximo || ent.puntajeMaximo || 20;
+        const maxPts = actInfo.puntajeMaximo || 3;
 
         const valNota = parseNota(ent.nota);
         const isCalificado = ent.estado === "Calificado" || valNota !== null;
@@ -597,7 +594,7 @@
                 <span>Hora: <strong class="text-slate-200">${fh.hora}</strong></span>
               </div>
               <div class="flex justify-between pt-1">
-                <span>Nota:</span>
+                <span>Calificación:</span>
                 <strong class="text-cyan-400 text-sm">${notaMostrar} / ${maxPts} pts</strong>
               </div>
             </div> 
@@ -646,12 +643,15 @@
               studentScores[ent.idEst] += val;
               totalSum += val;
             }
+            if(ent.idEst2 && studentScores[ent.idEst2] !== undefined) {
+              studentScores[ent.idEst2] += val;
+            }
           }
         });
       }
 
       const avg = estudiantesActivos > 0 ? (totalSum / estudiantesActivos).toFixed(1) : 0;
-      document.getElementById('teacher-avg').innerText = `${avg} / 20 pts`;
+      document.getElementById('teacher-avg').innerText = `${avg} pts`;
     }
 
     function switchTabDocente(tab) {
@@ -680,7 +680,7 @@
             <td class="p-3">${st.id}</td> 
             <td class="p-3 font-bold text-white">${st.nombre}</td> 
             <td class="p-3">${st.estadoGeneral || 'Activo'}</td> 
-            <td class="p-3 text-emerald-400 font-bold">${(studentScores[st.id] || 0).toFixed(1)} / 20</td> 
+            <td class="p-3 text-emerald-400 font-bold">${(studentScores[st.id] || 0).toFixed(1)} pts</td> 
             <td class="p-3 flex gap-2"> 
               <button onclick="verPerfilEstudianteDocente('${st.id}')" title="Ver Perfil Detallado" class="text-violet-400 hover:text-violet-300"><i class="fa-solid fa-id-card"></i></button>
               <button onclick="editarEstudiante('${st.id}')" class="text-cyan-400 hover:text-cyan-300"><i class="fa-solid fa-pen"></i></button> 
@@ -746,7 +746,7 @@
       tbody.innerHTML = '';
       const lista = datosDocenteCache && datosDocenteCache.actividades ? datosDocenteCache.actividades : [];
       
-      const activas = lista.filter(act => act.visible !== "OCULTO");
+      const activas = lista.filter(act => String(act.visible).trim() !== "OCULTO" && String(act.visible).trim() !== "FALSE");
 
       if (activas.length === 0) {
         tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-500">No hay actividades activas.</td></tr>`;
@@ -760,7 +760,7 @@
             <td class="p-3 font-bold text-white">${act.titulo}</td> 
             <td class="p-3">${act.herramientas || '-'}</td> 
             <td class="p-3">${act.fechaLimite || '-'}</td> 
-            <td class="p-3">${act.puntajeMaximo || 20}</td> 
+            <td class="p-3">${act.puntajeMaximo || 3}</td> 
             <td class="p-3 flex gap-2"> 
               <button onclick="editarActividad('${act.id}')" class="text-cyan-400 hover:text-cyan-300" title="Editar"><i class="fa-solid fa-pen"></i></button> 
               <button onclick="ocultarActividad('${act.id}')" class="text-amber-400 hover:text-amber-300" title="Ocultar de la lista"><i class="fa-solid fa-eye-slash"></i></button>
@@ -774,12 +774,12 @@
       if (!est) return;
 
       document.getElementById('perfil-est-nombre').innerText = est.nombre;
-      document.getElementById('perfil-est-puntaje').innerText = `${(studentScores[est.id] || 0).toFixed(1)} / 20 pts`;
+      document.getElementById('perfil-est-puntaje').innerText = `${(studentScores[est.id] || 0).toFixed(1)} pts`;
       
       const container = document.getElementById('perfil-est-entregas-list');
       container.innerHTML = '';
 
-      const entregasAlumno = datosDocenteCache.entregas ? datosDocenteCache.entregas.filter(e => String(e.idEst) === String(idEst)) : [];
+      const entregasAlumno = datosDocenteCache.entregas ? datosDocenteCache.entregas.filter(e => String(e.idEst) === String(idEst) || String(e.idEst2) === String(idEst)) : [];
 
       if (entregasAlumno.length === 0) {
         container.innerHTML = `<p class="text-xs text-slate-500 text-center py-4">Este estudiante no tiene entregas registradas.</p>`;
@@ -880,7 +880,7 @@
       document.getElementById('act-edit-titulo').value = act ? act.titulo : '';
       document.getElementById('act-edit-herramienta').value = act ? act.herramientas : '';
       document.getElementById('act-edit-fecha').value = act ? act.fechaLimite : '';
-      document.getElementById('act-edit-pts').value = act ? act.puntajeMaximo : '';
+      document.getElementById('act-edit-pts').value = act ? act.puntajeMaximo : 3;
       document.getElementById('modal-actividad').classList.remove('hidden');
     }
     function cerrarModalActividad() { document.getElementById('modal-actividad').classList.add('hidden'); }
